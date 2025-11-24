@@ -78,6 +78,11 @@ export async function POST(request: Request) {
         Aspect Ratio: ${aspectRatio}
         Additional Prompt: ${customPrompt}
         
+        IMPORTANT GUIDELINES:
+        - Do NOT include any bananas, fruit, or food items in the image unless explicitly requested in the Additional Prompt.
+        - Ensure clothing is neutral and appropriate for the scene (professional/casual), without any fruit patterns or logos.
+        - The background should be realistic and free of cartoonish elements.
+
         Ensure the subject maintains their likeness but fits naturally into the specified scene.
         The lighting and composition should be high quality, suitable for a dating app profile.
       `;
