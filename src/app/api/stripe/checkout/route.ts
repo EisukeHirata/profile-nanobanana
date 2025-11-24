@@ -49,6 +49,16 @@ export async function POST(request: Request) {
       }, { onConflict: "email" });
     }
 
+    // Determine the base URL for redirects
+    // Priority: NEXT_PUBLIC_APP_URL (manual override) -> VERCEL_URL (Vercel preview) -> NEXTAUTH_URL (standard) -> localhost
+    const getBaseUrl = () => {
+      if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+      if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+      return process.env.NEXTAUTH_URL || "http://localhost:3000";
+    };
+    
+    const baseUrl = getBaseUrl();
+
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: mode,
@@ -59,8 +69,8 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXTAUTH_URL}/profile?success=true`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/?canceled=true`,
+      success_url: `${baseUrl}/profile?success=true`,
+      cancel_url: `${baseUrl}/?canceled=true`,
       metadata: {
         userId: session.user.email,
         priceId: priceId,
