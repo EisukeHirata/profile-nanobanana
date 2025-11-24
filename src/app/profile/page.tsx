@@ -28,10 +28,69 @@ export default function ProfilePage() {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  useEffect(() => {
+    console.log("ProfilePage: status changed:", status);
+    const fetchData = async () => {
+      if (status === "authenticated") {
+        console.log("ProfilePage: Starting fetch...");
+        
+        // Fetch Credits (Critical for UI)
+        try {
+          const creditsRes = await fetch("/api/user/credits");
+          if (creditsRes.ok) {
+            const creditsData = await creditsRes.json();
+            console.log("ProfilePage: Credits fetched", creditsData);
+            setProfile({
+              credits: creditsData.credits,
+              subscription_tier: creditsData.subscription_tier || "Free",
+              subscription_status: creditsData.subscription_status || "active"
+            });
+          } else {
+            console.error("ProfilePage: Failed to fetch credits", creditsRes.status);
+          }
+        } catch (error) {
+          console.error("ProfilePage: Error fetching credits", error);
+        }
+
+        // Fetch History (Can fail without breaking page)
+        try {
+          const historyRes = await fetch("/api/history");
+          if (historyRes.ok) {
+            const historyData = await historyRes.json();
+            console.log("ProfilePage: History fetched", historyData.history?.length);
+            if (historyData.history) {
+              setHistory(historyData.history);
+            }
+          } else {
+            console.error("ProfilePage: Failed to fetch history", historyRes.status);
+          }
+        } catch (error) {
+          console.error("ProfilePage: Error fetching history", error);
+        }
+
+        console.log("ProfilePage: Setting isLoading to false");
+        setIsLoading(false);
+
+      } else if (status === "unauthenticated") {
+          console.log("ProfilePage: Unauthenticated, redirecting...");
+          setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [status]);
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ generationId: string, imageIndex: number } | null>(null);
+
   // ... (useEffect hooks)
 
-  const handleDeleteImage = async (generationId: string, imageIndex: number) => {
-    if (!confirm("Are you sure you want to delete this image?")) return;
+  const handleDeleteImage = (generationId: string, imageIndex: number) => {
+    setDeleteConfirmation({ generationId, imageIndex });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation) return;
+    const { generationId, imageIndex } = deleteConfirmation;
 
     try {
       const res = await fetch("/api/generations/delete-image", {
@@ -53,6 +112,8 @@ export default function ProfilePage() {
           return item;
         }).filter((item) => item.images.length > 0); // Remove empty generations
       });
+      
+      setDeleteConfirmation(null);
 
     } catch (error) {
       console.error("Delete failed", error);
@@ -72,6 +133,30 @@ export default function ProfilePage() {
     <main className={styles.main}>
       <PricingModal isOpen={isPricingOpen} onClose={() => setIsPricingOpen(false)} />
       
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h3>Delete Image?</h3>
+            <p>Are you sure you want to delete this image? This action cannot be undone.</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.cancelButton} 
+                onClick={() => setDeleteConfirmation(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className={styles.deleteConfirmButton} 
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lightbox */}
       {lightboxImage && (
         <div className={styles.lightbox} onClick={() => setLightboxImage(null)}>
