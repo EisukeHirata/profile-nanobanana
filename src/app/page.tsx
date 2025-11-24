@@ -22,6 +22,7 @@ export default function Home() {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("3:4");
   const [shotType, setShotType] = useState<ShotType>("Upper body");
   const [eyeContact, setEyeContact] = useState<EyeContact>("Direct");
+  const [quality, setQuality] = useState<"Standard" | "Pro">("Standard");
   const [imageCount, setImageCount] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -73,6 +74,7 @@ export default function Home() {
           aspectRatio,
           shotType,
           eyeContact,
+          quality, // Pass quality to API
           imageCount,
         }),
       });
@@ -135,6 +137,8 @@ export default function Home() {
                 setShotType={setShotType}
                 eyeContact={eyeContact}
                 setEyeContact={setEyeContact}
+                quality={quality}
+                setQuality={setQuality}
                 imageCount={imageCount}
                 setImageCount={setImageCount}
               />
@@ -150,6 +154,7 @@ export default function Home() {
               onGenerate={handleGenerate} 
               isGenerating={isGenerating}
               isDisabled={selectedImages.length === 0}
+              cost={imageCount}
             />
           </div>
         </div>

@@ -34,32 +34,90 @@
   text-decoration: underline;
 }
 
+.profileCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .userInfo {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: var(--surface);
-  padding: 1rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
+  object-fit: cover;
   border: 2px solid var(--primary);
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
 }
 
 .userName {
   font-weight: 600;
-  margin: 0;
+  font-size: 1.25rem;
+  color: var(--foreground);
 }
 
 .userEmail {
-  font-size: 0.875rem;
   color: #a1a1aa;
-  margin: 0;
+  font-size: 0.9rem;
+}
+
+.planInfo {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.manageButton {
+  margin-left: auto;
+  background: rgba(109, 40, 217, 0.1);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.manageButton:hover {
+  background: var(--primary);
+  color: white;
 }
 
 .content {
@@ -72,6 +130,13 @@
   margin-bottom: 2rem;
 }
 
+.historyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
 .historyList {
   display: flex;
   flex-direction: column;
@@ -80,16 +145,20 @@
 
 .historyItem {
   background: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .itemHeader {
+  padding: 0.75rem;
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
   color: #a1a1aa;
 }
 

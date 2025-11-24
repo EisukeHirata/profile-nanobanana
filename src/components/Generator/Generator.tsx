@@ -8,9 +8,10 @@ interface GeneratorProps {
   onGenerate: () => void;
   isGenerating: boolean;
   isDisabled: boolean;
+  cost: number;
 }
 
-export default function Generator({ onGenerate, isGenerating, isDisabled }: GeneratorProps) {
+export default function Generator({ onGenerate, isGenerating, isDisabled, cost }: GeneratorProps) {
   return (
     <div className={styles.container}>
       <button 
@@ -26,7 +27,7 @@ export default function Generator({ onGenerate, isGenerating, isDisabled }: Gene
         ) : (
           <>
             <Sparkles size={20} />
-            <span>Generate Photos</span>
+            <span>Generate Photos ({cost} Credits)</span>
           </>
         )}
       </button>

@@ -15,7 +15,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { images, scene, prompt: customPrompt, aspectRatio, shotType, eyeContact, imageCount = 1 } = body;
+    const { 
+      images, 
+      scene, 
+      prompt: customPrompt, 
+      aspectRatio, 
+      shotType, 
+      eyeContact,
+      quality,
+      imageCount = 1 
+    } = body;
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json(
@@ -48,8 +57,13 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use the specific image generation model requested by the user
-    const model = genAI.getGenerativeModel({ model: "gemini-3-pro-image-preview" });
+    
+    // Select model based on quality
+    // Currently, only gemini-3-pro-image-preview supports reliable image generation.
+    // gemini-2.0-flash fails to return valid base64 strings.
+    // So we use the Pro model for both, effectively making "Standard" a high-quality generation too.
+    const modelName = "gemini-3-pro-image-preview";
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const allGeneratedImages: string[] = [];
     let lastDebugResponse = "";
@@ -58,7 +72,6 @@ export async function POST(request: Request) {
     for (let i = 0; i < imageCount; i++) {
       const prompt = `
         Generate a photorealistic profile picture based on the user's uploaded photos.
-        Style: nano banana
         Scene: ${scene}
         Shot Type: ${shotType}
         Eye Contact: ${eyeContact}
@@ -68,6 +81,7 @@ export async function POST(request: Request) {
         Ensure the subject maintains their likeness but fits naturally into the specified scene.
         The lighting and composition should be high quality, suitable for a dating app profile.
       `;
+      
       basePrompt = prompt;
 
       // Prepare image parts
@@ -85,16 +99,11 @@ export async function POST(request: Request) {
         // Log full response for debugging
         console.log("Gemini Full Response:", JSON.stringify(response, null, 2));
 
-        // Check for inlineData (native image generation)
+        // Check for inlineData (native image generation - mostly for Pro model)
         if (response.candidates && response.candidates[0].content && response.candidates[0].content.parts) {
             for (const part of response.candidates[0].content.parts) {
                 if ('inlineData' in part && part.inlineData && part.inlineData.data) {
                     // Found native image data!
-                    // It usually comes as a base64 string without the prefix.
-                    // We'll add the prefix in the frontend, or we can add it here if we want to be consistent.
-                    // The frontend now expects a full data URI or adds it if missing.
-                    // Let's just push the raw data and let frontend handle it, OR construct a full URI.
-                    // The model usually returns mimeType too.
                     const mimeType = part.inlineData.mimeType || "image/png";
                     const fullUri = `data:${mimeType};base64,${part.inlineData.data}`;
                     allGeneratedImages.push(fullUri);
@@ -104,17 +113,31 @@ export async function POST(request: Request) {
             }
         }
         
-        // Fallback: Check text for base64 if no inlineData found
+        // Fallback/Standard: Check text for JSON or regex base64
         if (allGeneratedImages.length === 0) {
             const text = lastDebugResponse;
-            if (text.includes("data:image")) {
-                 const match = text.match(/(data:image\/[^;]+;\s*base64,\s*[A-Za-z0-9+/=\s]+)/);
-                 if (match && match[1]) {
-                     const fullDataUri = match[1].replace(/\s/g, '');
-                     if (fullDataUri.length > 1000) {
-                         allGeneratedImages.push(fullDataUri);
+            
+            // Try parsing JSON first (for Standard model)
+            try {
+                // Remove markdown code blocks if present
+                const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
+                const json = JSON.parse(cleanText);
+                if (json.image_data) {
+                    // Sanitize the image data (remove whitespace/newlines)
+                    const cleanImage = json.image_data.replace(/\s/g, '');
+                    allGeneratedImages.push(cleanImage);
+                }
+            } catch (e) {
+                // Not valid JSON, fall back to regex
+                if (text.includes("data:image")) {
+                     const match = text.match(/(data:image\/[^;]+;\s*base64,\s*[A-Za-z0-9+/=\s]+)/);
+                     if (match && match[1]) {
+                         const fullDataUri = match[1].replace(/\s/g, '');
+                         if (fullDataUri.length > 1000) {
+                             allGeneratedImages.push(fullDataUri);
+                         }
                      }
-                 }
+                }
             }
         }
 

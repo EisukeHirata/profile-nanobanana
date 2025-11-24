@@ -40,6 +40,8 @@ export default function Gallery({ images }: GalleryProps) {
       <h2 className={styles.title}>Your New Look</h2>
       <div className={styles.grid}>
         {images.map((image, index) => {
+          if (!image || image.trim() === "") return null;
+          
           const src = image.startsWith("data:image") 
             ? image 
             : `data:image/jpeg;base64,${image}`;
