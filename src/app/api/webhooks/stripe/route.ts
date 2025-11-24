@@ -21,17 +21,25 @@ export async function POST(request: Request) {
   }
 
   try {
+    console.log("Webhook received. Event type:", event.type);
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userEmail = session.metadata?.userId;
         const mode = session.mode;
 
-        if (!userEmail) break;
+        console.log(`Processing checkout session. Email: ${userEmail}, Mode: ${mode}`);
+
+        if (!userEmail) {
+            console.error("No userId in metadata");
+            break;
+        }
 
         if (mode === "payment") {
           // Determine credits based on Price ID
           const priceId = session.metadata?.priceId;
+          console.log("Payment mode. Price ID:", priceId);
           
           let creditsToAdd = 0;
           
@@ -45,8 +53,11 @@ export async function POST(request: Request) {
             if (session.amount_total === 1999) creditsToAdd = 50;
           }
 
+          console.log(`Credits to add: ${creditsToAdd}`);
+
           if (creditsToAdd > 0) {
             await addCredits(userEmail, creditsToAdd);
+            console.log("Credits added successfully");
           }
         } else if (mode === "subscription") {
           // New subscription
@@ -54,6 +65,8 @@ export async function POST(request: Request) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const priceId = subscription.items.data[0].price.id;
           
+          console.log("Subscription mode. Price ID:", priceId);
+
           // Upsert profile with subscription details
           // We use upsert to handle cases where profile might not exist yet
           const { data: existingProfile } = await supabaseAdmin
@@ -71,11 +84,11 @@ export async function POST(request: Request) {
             created_at: existingProfile?.created_at // Keep original creation date if exists
           }, { onConflict: 'email' });
           
-          // Give initial monthly credits (if not already handled by default above, but let's be explicit)
-          // Actually, for a new subscription, we should probably just SET the credits to the monthly amount + any existing?
-          // Or just add them. Let's add them to be safe.
           const credits = getCreditsForPrice(priceId);
+          console.log(`Subscription credits to add: ${credits}`);
+          
           await addCredits(userEmail, credits);
+          console.log("Subscription credits added successfully");
         }
         break;
       }
@@ -84,6 +97,8 @@ export async function POST(request: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
         
+        console.log("Invoice payment succeeded. Customer ID:", customerId);
+
         // Find user by customer ID
         const { data: profile } = await supabaseAdmin
           .from("profiles")
@@ -96,8 +111,11 @@ export async function POST(request: Request) {
           const lineItem = invoice.lines.data[0] as any;
           const priceId = lineItem?.price?.id;
           
+          console.log("Subscription renewal. Price ID:", priceId);
+
           if (priceId) {
             const credits = getCreditsForPrice(priceId);
+            console.log(`Renewal credits to add: ${credits}`);
             await addCredits(profile.email, credits);
           }
         }

@@ -15,6 +15,10 @@ interface UserProfile {
   subscription_status: string | null;
 }
 
+import { X } from "lucide-react";
+
+// ... (imports)
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -22,52 +26,39 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/");
-    }
-  }, [status, router]);
+  // ... (useEffect hooks)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (status === "authenticated") {
-        try {
-          // Fetch History
-          const historyRes = await fetch("/api/history");
-          const historyData = await historyRes.json();
-          if (historyData.history) {
-            setHistory(historyData.history);
+  const handleDeleteImage = async (generationId: string, imageIndex: number) => {
+    if (!confirm("Are you sure you want to delete this image?")) return;
+
+    try {
+      const res = await fetch("/api/generations/delete-image", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generationId, imageIndex }),
+      });
+
+      if (!res.ok) throw new Error("Failed to delete image");
+
+      const data = await res.json();
+
+      // Update local state
+      setHistory((prev) => {
+        return prev.map((item) => {
+          if (item.id === generationId) {
+            return { ...item, images: data.images };
           }
+          return item;
+        }).filter((item) => item.images.length > 0); // Remove empty generations
+      });
 
-          // Fetch Profile (Credits/Plan)
-          const creditsRes = await fetch("/api/user/credits");
-          const creditsData = await creditsRes.json();
-          // Note: /api/user/credits currently returns { credits: number }
-          // We might need to update it to return plan info, or create a new route.
-          // For now, let's assume we update /api/user/credits to return more info or fetch from a new endpoint.
-          // Let's try to fetch from a new endpoint /api/user/profile if it existed, but for now let's just use what we have
-          // and maybe update the API later. Or better, let's update the API first?
-          // Actually, I can update the API in the next step. Let's assume the API returns the data we need.
-          // Wait, I should check /api/user/credits again. It only returns credits.
-          // I'll need to update /api/user/credits to return full profile info.
-          
-          setProfile({
-            credits: creditsData.credits,
-            subscription_tier: creditsData.subscription_tier || "Free",
-            subscription_status: creditsData.subscription_status || "active"
-          });
-
-        } catch (error) {
-          console.error("Failed to fetch data", error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-  }, [status]);
+    } catch (error) {
+      console.error("Delete failed", error);
+      alert("Failed to delete image");
+    }
+  };
 
   if (status === "loading" || isLoading) {
     return <div className={styles.loading}>Loading...</div>;
@@ -80,7 +71,24 @@ export default function ProfilePage() {
   return (
     <main className={styles.main}>
       <PricingModal isOpen={isPricingOpen} onClose={() => setIsPricingOpen(false)} />
+      
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div className={styles.lightbox} onClick={() => setLightboxImage(null)}>
+          <button className={styles.closeButton} onClick={() => setLightboxImage(null)}>
+            <X size={32} />
+          </button>
+          <img 
+            src={lightboxImage} 
+            alt="Full view" 
+            className={styles.lightboxImage} 
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
+      )}
+
       <header className={styles.header}>
+        {/* ... (header content) ... */}
         <div className={styles.headerContent}>
           <h1 className={styles.title}>My Profile</h1>
           <button onClick={() => router.push("/")} className={styles.backButton}>
@@ -143,7 +151,11 @@ export default function ProfilePage() {
                   </span>
                   <span className={styles.sceneBadge}>{item.scene}</span>
                 </div>
-                <Gallery images={item.images} />
+                <Gallery 
+                  images={item.images} 
+                  onDelete={(index) => handleDeleteImage(item.id, index)}
+                  onImageClick={(src) => setLightboxImage(src)}
+                />
               </div>
             ))}
           </div>

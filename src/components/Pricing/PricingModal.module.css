@@ -193,7 +193,7 @@
   gap: 1rem;
 }
 
-.creditCard {
+.creditPack {
   background: #27272a;
   border: 1px solid #3f3f46;
   border-radius: 0.75rem;
@@ -201,38 +201,49 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  transition: transform 0.2s;
 }
 
-.creditIcon {
-  background: rgba(251, 191, 36, 0.1);
-  color: #fbbf24;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+.creditPack:hover {
+  transform: translateY(-2px);
+  border-color: #52525b;
 }
 
-.creditCard h4 {
-  font-size: 1rem;
-  margin: 0;
+.packInfo {
+  display: flex;
+  flex-direction: column;
 }
 
-.creditCard p {
-  color: #a1a1aa;
-  margin: 0;
-  font-size: 0.875rem;
-}
-
-.smallButton {
-  margin-left: auto;
-  background: #3f3f46;
-  border: none;
+.packAmount {
+  font-weight: 700;
   color: white;
-  padding: 0.5rem 1rem;
+}
+
+.packPrice {
+  font-size: 0.875rem;
+  color: #a1a1aa;
+}
+
+.buyButton {
+  margin-left: auto;
+  background: #fbbf24;
+  border: none;
+  color: black;
+  padding: 0.5rem 1.25rem;
   border-radius: 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
+  transition: all 0.2s;
 }
 
-.smallButton:hover {
-  background: #52525b;
+.buyButton:hover {
+  background: #f59e0b;
+  transform: scale(1.05);
+}
+
+.buyButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }

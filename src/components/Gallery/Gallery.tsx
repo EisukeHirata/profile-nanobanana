@@ -1,15 +1,17 @@
 "use client";
 
 import React from "react";
-import { Download, Share2 } from "lucide-react";
+import { Download, Share2, Trash2, Maximize2 } from "lucide-react";
 import { motion } from "framer-motion";
 import styles from "./Gallery.module.css";
 
 interface GalleryProps {
   images: string[];
+  onDelete?: (index: number) => void;
+  onImageClick?: (src: string) => void;
 }
 
-export default function Gallery({ images }: GalleryProps) {
+export default function Gallery({ images, onDelete, onImageClick }: GalleryProps) {
   if (images.length === 0) return null;
 
   const handleDownload = (src: string, index: number) => {
@@ -54,8 +56,17 @@ export default function Gallery({ images }: GalleryProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <div className={styles.imageWrapper}>
+            <div 
+              className={styles.imageWrapper} 
+              onClick={() => onImageClick && onImageClick(src)}
+              style={{ cursor: onImageClick ? 'pointer' : 'default' }}
+            >
               <img src={src} alt={`Generated ${index}`} className={styles.image} />
+              {onImageClick && (
+                <div className={styles.overlay}>
+                  <Maximize2 color="white" size={24} />
+                </div>
+              )}
             </div>
             <div className={styles.actions}>
               <button 
@@ -65,9 +76,15 @@ export default function Gallery({ images }: GalleryProps) {
               >
                 <Download size={20} />
               </button>
-              <button className={styles.downloadButton} title="Share">
-                <Share2 size={20} />
-              </button>
+              {onDelete && (
+                <button 
+                  className={`${styles.downloadButton} ${styles.deleteButton}`} 
+                  title="Delete"
+                  onClick={() => onDelete(index)}
+                >
+                  <Trash2 size={20} />
+                </button>
+              )}
             </div>
           </motion.div>
         );
