@@ -14,6 +14,8 @@ import LoginButton from "@/components/LoginButton/LoginButton";
 import LandingPage from "@/components/LandingPage/LandingPage";
 import PricingModal from "@/components/Pricing/PricingModal";
 
+import { X, Maximize2 } from "lucide-react";
+
 export default function Home() {
   const { data: session, status } = useSession();
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -27,6 +29,7 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   if (status === "loading") {
     return <div className={styles.loading}>Loading...</div>;
@@ -100,9 +103,59 @@ export default function Home() {
     }
   };
 
+  const costPerImage = quality === "Pro" ? 5 : 1;
+  const totalCost = imageCount * costPerImage;
+
   return (
     <main className={styles.main}>
       <PricingModal isOpen={isPricingOpen} onClose={() => setIsPricingOpen(false)} />
+      
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div 
+          className={styles.lightbox} 
+          onClick={() => setLightboxImage(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            zIndex: 1000,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            cursor: 'zoom-out'
+          }}
+        >
+          <button 
+            onClick={() => setLightboxImage(null)}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            <X size={32} />
+          </button>
+          <img 
+            src={lightboxImage} 
+            alt="Full view" 
+            style={{
+              maxWidth: '90%',
+              maxHeight: '90%',
+              objectFit: 'contain'
+            }}
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
+      )}
+
       <header className={styles.header}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <h1 className={styles.title}>
@@ -154,7 +207,7 @@ export default function Home() {
               onGenerate={handleGenerate} 
               isGenerating={isGenerating}
               isDisabled={selectedImages.length === 0}
-              cost={imageCount}
+              cost={totalCost}
             />
           </div>
         </div>
@@ -162,7 +215,10 @@ export default function Home() {
         <div className={styles.rightPanel}>
           <h2 className={styles.sectionTitle}>Generated Results</h2>
           {generatedImages.length > 0 ? (
-            <Gallery images={generatedImages} />
+            <Gallery 
+              images={generatedImages} 
+              onImageClick={(src) => setLightboxImage(src)}
+            />
           ) : (
             <div style={{ 
               flex: 1, 

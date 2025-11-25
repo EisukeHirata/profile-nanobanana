@@ -26,7 +26,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ images: string[], currentIndex: number } | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ generationId: string, imageIndex: number } | null>(null);
 
   useEffect(() => {
     console.log("ProfilePage: status changed:", status);
@@ -80,10 +81,6 @@ export default function ProfilePage() {
     fetchData();
   }, [status]);
 
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ generationId: string, imageIndex: number } | null>(null);
-
-  // ... (useEffect hooks)
-
   const handleDeleteImage = (generationId: string, imageIndex: number) => {
     setDeleteConfirmation({ generationId, imageIndex });
   };
@@ -119,6 +116,24 @@ export default function ProfilePage() {
       console.error("Delete failed", error);
       alert("Failed to delete image");
     }
+  };
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!lightbox) return;
+    setLightbox({
+      ...lightbox,
+      currentIndex: (lightbox.currentIndex + 1) % lightbox.images.length
+    });
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!lightbox) return;
+    setLightbox({
+      ...lightbox,
+      currentIndex: (lightbox.currentIndex - 1 + lightbox.images.length) % lightbox.images.length
+    });
   };
 
   if (status === "loading" || isLoading) {
@@ -157,18 +172,40 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Lightbox */}
-      {lightboxImage && (
-        <div className={styles.lightbox} onClick={() => setLightboxImage(null)}>
-          <button className={styles.closeButton} onClick={() => setLightboxImage(null)}>
+      {/* Carousel Lightbox */}
+      {lightbox && (
+        <div className={styles.lightbox} onClick={() => setLightbox(null)}>
+          <button className={styles.closeButton} onClick={() => setLightbox(null)}>
             <X size={32} />
           </button>
-          <img 
-            src={lightboxImage} 
-            alt="Full view" 
-            className={styles.lightboxImage} 
-            onClick={(e) => e.stopPropagation()} 
-          />
+          
+          <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+            {lightbox.images.length > 1 && (
+              <button className={styles.navButton} onClick={prevImage} style={{ left: '20px' }}>
+                ←
+              </button>
+            )}
+            
+            <img 
+              src={lightbox.images[lightbox.currentIndex].startsWith("data:image") 
+                ? lightbox.images[lightbox.currentIndex] 
+                : `data:image/jpeg;base64,${lightbox.images[lightbox.currentIndex]}`} 
+              alt="Full view" 
+              className={styles.lightboxImage} 
+            />
+
+            {lightbox.images.length > 1 && (
+              <button className={styles.navButton} onClick={nextImage} style={{ right: '20px' }}>
+                →
+              </button>
+            )}
+            
+            {lightbox.images.length > 1 && (
+              <div className={styles.counter}>
+                {lightbox.currentIndex + 1} / {lightbox.images.length}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -236,11 +273,39 @@ export default function ProfilePage() {
                   </span>
                   <span className={styles.sceneBadge}>{item.scene}</span>
                 </div>
-                <Gallery 
-                  images={item.images} 
-                  onDelete={(index) => handleDeleteImage(item.id, index)}
-                  onImageClick={(src) => setLightboxImage(src)}
-                />
+                
+                {/* Grouped Display */}
+                <div className={styles.imageGroup}>
+                  {item.images.length > 1 ? (
+                    <div 
+                      className={styles.imageStack} 
+                      onClick={() => setLightbox({ images: item.images, currentIndex: 0 })}
+                    >
+                      {item.images.slice(0, 3).map((img, idx) => (
+                        <div 
+                          key={idx} 
+                          className={styles.stackItem}
+                          style={{ 
+                            transform: `translate(${idx * 5}px, ${idx * 5}px)`,
+                            zIndex: 3 - idx 
+                          }}
+                        >
+                          <img 
+                            src={img.startsWith("data:image") ? img : `data:image/jpeg;base64,${img}`} 
+                            alt={`Stack ${idx}`} 
+                          />
+                        </div>
+                      ))}
+                      <div className={styles.stackCount}>+{item.images.length}</div>
+                    </div>
+                  ) : (
+                    <Gallery 
+                      images={item.images} 
+                      onDelete={(index) => handleDeleteImage(item.id, index)}
+                      onImageClick={() => setLightbox({ images: item.images, currentIndex: 0 })}
+                    />
+                  )}
+                </div>
               </div>
             ))}
           </div>

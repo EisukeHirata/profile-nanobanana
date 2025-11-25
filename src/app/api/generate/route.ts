@@ -46,7 +46,8 @@ export async function POST(request: Request) {
       .single();
 
     const currentCredits = profile?.credits ?? 0;
-    const cost = imageCount; // 1 credit per image
+    const costPerImage = quality === "Pro" ? 5 : 1;
+    const cost = imageCount * costPerImage;
 
     if (currentCredits < cost) {
       return NextResponse.json({ 
@@ -59,10 +60,8 @@ export async function POST(request: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
     
     // Select model based on quality
-    // Currently, only gemini-3-pro-image-preview supports reliable image generation.
-    // gemini-2.0-flash fails to return valid base64 strings.
-    // So we use the Pro model for both, effectively making "Standard" a high-quality generation too.
-    const modelName = "gemini-3-pro-image-preview";
+    const modelName = quality === "Pro" ? "gemini-3-pro-image-preview" : "gemini-2.5-flash-image";
+    console.log(`Using model: ${modelName} for quality: ${quality}`);
     const model = genAI.getGenerativeModel({ model: modelName });
 
     const allGeneratedImages: string[] = [];
