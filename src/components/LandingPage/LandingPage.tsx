@@ -18,11 +18,11 @@ export default function LandingPage() {
         <div className={styles.hero}>
           <h1 className={styles.title}>
             Create Your Perfect <br />
-            <span className={styles.gradientText}>Dating Profile Photos</span>
-            <br /> with AI
+            <span className={styles.gradientText}>AI Profile Photos</span>
+            <br /> in Seconds
           </h1>
           <p className={styles.subtitle}>
-            Transform your selfies into professional-quality photos for Tinder, Bumble, and Hinge. 
+            Transform your selfies into professional-quality photos for LinkedIn, Social Media, and Dating apps. 
             No photographer needed.
           </p>
           
@@ -47,8 +47,8 @@ export default function LandingPage() {
           </div>
           <div className={styles.featureCard}>
             <div className={styles.icon}>🚀</div>
-            <h3>Boost Matches</h3>
-            <p>Stand out with high-quality, attractive profile pics.</p>
+            <h3>Stand Out Everywhere</h3>
+            <p>Boost your presence on LinkedIn, Instagram, and more.</p>
           </div>
         </div>
       </main>

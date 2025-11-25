@@ -313,10 +313,16 @@
   border-radius: 999px;
 }
 
-.closeButton {
+.lightboxControls {
   position: absolute;
   top: 2rem;
   right: 2rem;
+  display: flex;
+  gap: 1rem;
+  z-index: 2001;
+}
+
+.controlButton {
   background: rgba(255, 255, 255, 0.1);
   border: none;
   color: white;
@@ -329,9 +335,56 @@
   transition: all 0.2s;
 }
 
-.closeButton:hover {
+.controlButton:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.1);
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ... existing styles ... */
+
+.imageStack {
+  position: relative;
+  width: 100%;
+  height: 250px; /* Fixed height for consistency */
+  cursor: pointer;
+  background: var(--surface);
+  /* border-radius: 1rem; Removed to let items handle border */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* Ensure content stays within bounds */
+}
+
+.stackItem {
+  /* Position and size are now handled inline for stacks, 
+     but we keep defaults for single items if needed */
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.stackItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensure images fill the card */
 }
 
 .modalOverlay {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { X, Download, Trash2 } from "lucide-react";
 
 import { GeneratedItem } from "@/utils/storage";
 import Gallery from "@/components/Gallery/Gallery";
@@ -14,10 +15,6 @@ interface UserProfile {
   subscription_tier: string | null;
   subscription_status: string | null;
 }
-
-import { X } from "lucide-react";
-
-// ... (imports)
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -118,6 +115,29 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDownload = (src: string, index: number) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const pngUrl = canvas.toDataURL("image/png");
+        
+        const link = document.createElement("a");
+        link.href = pngUrl;
+        link.download = `nano-profile-${index + 1}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    };
+  };
+
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!lightbox) return;
@@ -175,9 +195,24 @@ export default function ProfilePage() {
       {/* Carousel Lightbox */}
       {lightbox && (
         <div className={styles.lightbox} onClick={() => setLightbox(null)}>
-          <button className={styles.closeButton} onClick={() => setLightbox(null)}>
-            <X size={32} />
-          </button>
+          <div className={styles.lightboxControls}>
+             <button 
+              className={styles.controlButton} 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload(
+                  lightbox.images[lightbox.currentIndex], 
+                  lightbox.currentIndex
+                );
+              }}
+              title="Download"
+            >
+              <Download size={24} />
+            </button>
+            <button className={styles.controlButton} onClick={() => setLightbox(null)}>
+              <X size={24} />
+            </button>
+          </div>
           
           <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
             {lightbox.images.length > 1 && (
@@ -210,7 +245,6 @@ export default function ProfilePage() {
       )}
 
       <header className={styles.header}>
-        {/* ... (header content) ... */}
         <div className={styles.headerContent}>
           <h1 className={styles.title}>My Profile</h1>
           <button onClick={() => router.push("/")} className={styles.backButton}>
@@ -272,38 +306,41 @@ export default function ProfilePage() {
                     {new Date(item.timestamp).toLocaleDateString()}
                   </span>
                   <span className={styles.sceneBadge}>{item.scene}</span>
+                  <button 
+                    className={styles.deleteButton}
+                    onClick={() => handleDeleteImage(item.id, 0)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
                 
-                {/* Grouped Display */}
-                <div className={styles.imageGroup}>
-                  {item.images.length > 1 ? (
+                {/* Unified Display */}
+                <div 
+                  className={styles.imageStack} 
+                  onClick={() => setLightbox({ images: item.images, currentIndex: 0 })}
+                >
+                  {item.images.slice(0, 3).map((img, idx) => (
                     <div 
-                      className={styles.imageStack} 
-                      onClick={() => setLightbox({ images: item.images, currentIndex: 0 })}
+                      key={idx} 
+                      className={styles.stackItem}
+                      style={{ 
+                        transform: item.images.length > 1 ? `translate(${idx * 5}px, ${idx * 5}px)` : 'none',
+                        zIndex: 3 - idx,
+                        width: '200px',
+                        height: '200px',
+                        position: item.images.length > 1 ? 'absolute' : 'relative',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        border: '2px solid var(--surface-highlight)',
+                      }}
                     >
-                      {item.images.slice(0, 3).map((img, idx) => (
-                        <div 
-                          key={idx} 
-                          className={styles.stackItem}
-                          style={{ 
-                            transform: `translate(${idx * 5}px, ${idx * 5}px)`,
-                            zIndex: 3 - idx 
-                          }}
-                        >
-                          <img 
-                            src={img.startsWith("data:image") ? img : `data:image/jpeg;base64,${img}`} 
-                            alt={`Stack ${idx}`} 
-                          />
-                        </div>
-                      ))}
-                      <div className={styles.stackCount}>+{item.images.length}</div>
+                      <img 
+                        src={img.startsWith("data:image") ? img : `data:image/jpeg;base64,${img}`} 
+                        alt={`Stack ${idx}`} 
+                      />
                     </div>
-                  ) : (
-                    <Gallery 
-                      images={item.images} 
-                      onDelete={(index) => handleDeleteImage(item.id, index)}
-                      onImageClick={() => setLightbox({ images: item.images, currentIndex: 0 })}
-                    />
+                  ))}
+                  {item.images.length > 1 && (
+                    <div className={styles.stackCount}>+{item.images.length}</div>
                   )}
                 </div>
               </div>
