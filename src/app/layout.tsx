@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "NanoProfile - AI Dating Photos",
-  description: "Generate premium dating profile photos with AI",
+  title: "NanoProfile - AI Profile Photos",
+  description: "Generate premium profile photos for any platform with AI",
 };
 
 export default function RootLayout({

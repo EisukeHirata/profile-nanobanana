@@ -14,7 +14,7 @@ interface Scene {
 }
 
 const scenes: Scene[] = [
-  { id: "casual", label: "Casual Dating", emoji: "☕", description: "Relaxed coffee shop vibe" },
+  { id: "casual", label: "Casual Lifestyle", emoji: "☕", description: "Relaxed coffee shop vibe" },
   { id: "professional", label: "Professional", emoji: "💼", description: "Clean & confident look" },
   { id: "outdoor", label: "Outdoor Adventure", emoji: "🌲", description: "Nature & hiking style" },
   { id: "travel", label: "Travel", emoji: "✈️", description: "Iconic landmarks background" },

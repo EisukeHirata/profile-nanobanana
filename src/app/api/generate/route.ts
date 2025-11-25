@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         - The background should be realistic and free of cartoonish elements.
 
         Ensure the subject maintains their likeness but fits naturally into the specified scene.
-        The lighting and composition should be high quality, suitable for a dating app profile.
+        The lighting and composition should be high quality, suitable for a professional or social media profile.
       `;
       
       basePrompt = prompt;
