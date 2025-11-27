@@ -29,6 +29,7 @@ export default function Footer() {
 
             <div className={styles.linkGroup}>
               <h4>Legal</h4>
+              <Link href="/legal">特定商取引法</Link>
               <Link href="/privacy">Privacy Policy</Link>
               <Link href="/terms">Terms of Service</Link>
             </div>
