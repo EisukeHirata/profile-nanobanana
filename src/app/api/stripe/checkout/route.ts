@@ -50,11 +50,17 @@ export async function POST(request: Request) {
     }
 
     // Determine the base URL for redirects
-    // Priority: NEXT_PUBLIC_APP_URL (manual override) -> VERCEL_URL (Vercel preview) -> NEXTAUTH_URL (standard) -> localhost
+    // Determine the base URL for redirects
+    // Priority: NEXT_PUBLIC_APP_URL (manual override) -> NEXTAUTH_URL (standard) -> Origin Header (dynamic) -> VERCEL_URL (Vercel preview) -> localhost
     const getBaseUrl = () => {
       if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+      if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
+      
+      const origin = request.headers.get("origin");
+      if (origin) return origin;
+      
       if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-      return process.env.NEXTAUTH_URL || "http://localhost:3000";
+      return "http://localhost:3000";
     };
     
     const baseUrl = getBaseUrl();

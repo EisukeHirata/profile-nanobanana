@@ -50,7 +50,7 @@ export async function POST(request: Request) {
           } else {
             // Fallback logic
             if (session.amount_total === 499) creditsToAdd = 10;
-            if (session.amount_total === 1999) creditsToAdd = 50;
+            if (session.amount_total === 1799) creditsToAdd = 50;
           }
 
           console.log(`Credits to add: ${creditsToAdd}`);
@@ -131,9 +131,9 @@ export async function POST(request: Request) {
 }
 
 function getCreditsForPrice(priceId: string): number {
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_BASIC) return 50;
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PRO) return 150;
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PREMIUM) return 500;
+  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_BASIC) return 40;
+  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PRO) return 90;
+  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PREMIUM) return 240;
   return 0;
 }
 
