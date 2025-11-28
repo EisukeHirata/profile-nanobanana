@@ -17,10 +17,9 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from("generations")
-      .select("*")
+      .select("id, created_at, prompt, scene, user_email")
       .eq("user_email", session.user.email)
-      .order("created_at", { ascending: false })
-      .limit(6); // Limit to latest 6 items to improve performance
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Supabase error:", error);
@@ -34,7 +33,7 @@ export async function GET() {
     const history = data.map(item => ({
       id: item.id,
       timestamp: new Date(item.created_at).getTime(),
-      images: item.images,
+      images: [], // Images will be loaded lazily
       prompt: item.prompt,
       scene: item.scene
     }));

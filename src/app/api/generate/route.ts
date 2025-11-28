@@ -89,12 +89,23 @@ export async function POST(request: Request) {
       basePrompt = prompt;
 
       // Prepare image parts
-      const imageParts = images.map((base64: string) => ({
-        inlineData: {
-          data: base64,
-          mimeType: "image/jpeg",
-        },
-      }));
+      const imageParts = images.map((img: string | { data: string; mimeType: string }) => {
+        if (typeof img === 'string') {
+          return {
+            inlineData: {
+              data: img,
+              mimeType: "image/jpeg",
+            },
+          };
+        } else {
+          return {
+            inlineData: {
+              data: img.data,
+              mimeType: img.mimeType || "image/jpeg",
+            },
+          };
+        }
+      });
 
       try {
         const result = await model.generateContent([prompt, ...imageParts]);
@@ -168,12 +179,55 @@ export async function POST(request: Request) {
     // Save to Supabase if user is authenticated
     if (session?.user?.email) {
       try {
-        await supabaseAdmin.from("generations").insert({
-          user_email: session.user.email,
-          prompt: customPrompt || basePrompt,
-          scene: scene,
-          images: allGeneratedImages,
-        });
+        const imageUrls: string[] = [];
+
+        // Upload images to Supabase Storage
+        for (const base64DataUri of allGeneratedImages) {
+          try {
+            // Extract base64 data and mime type
+            const matches = base64DataUri.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (!matches || matches.length !== 3) {
+              console.warn("Invalid base64 string, skipping upload");
+              continue;
+            }
+            
+            const mimeType = matches[1];
+            const base64Data = matches[2];
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            const fileName = `${session.user.email}/${Date.now()}-${Math.random().toString(36).substring(7)}.${mimeType.split('/')[1]}`;
+            
+            const { error: uploadError } = await supabaseAdmin.storage
+              .from('generated-images')
+              .upload(fileName, buffer, {
+                contentType: mimeType,
+                upsert: false
+              });
+
+            if (uploadError) {
+              console.error("Failed to upload image:", uploadError);
+              continue;
+            }
+
+            const { data: { publicUrl } } = supabaseAdmin.storage
+              .from('generated-images')
+              .getPublicUrl(fileName);
+              
+            imageUrls.push(publicUrl);
+          } catch (uploadErr) {
+            console.error("Error processing image for upload:", uploadErr);
+          }
+        }
+
+        // Save URLs to database
+        if (imageUrls.length > 0) {
+          await supabaseAdmin.from("generations").insert({
+            user_email: session.user.email,
+            prompt: customPrompt || basePrompt,
+            scene: scene,
+            images: imageUrls, // Saving URLs instead of Base64!
+          });
+        }
       } catch (dbError) {
         console.error("Failed to save to Supabase:", dbError);
       }

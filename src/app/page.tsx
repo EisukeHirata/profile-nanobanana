@@ -48,16 +48,19 @@ export default function Home() {
     setGeneratedImages([]);
     
     try {
-      // Convert images to base64
-      const base64Images = await Promise.all(
+      // Convert images to base64 with mimeType
+      const processedImages = await Promise.all(
         selectedImages.map(async (file) => {
-          return new Promise<string>((resolve, reject) => {
+          return new Promise<{ data: string; mimeType: string }>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
               const result = reader.result as string;
               // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
               const base64 = result.split(",")[1];
-              resolve(base64);
+              resolve({
+                data: base64,
+                mimeType: file.type || "image/jpeg" // Default to jpeg if missing
+              });
             };
             reader.onerror = reject;
             reader.readAsDataURL(file);
@@ -71,7 +74,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          images: base64Images,
+          images: processedImages,
           scene: selectedScene,
           prompt: customPrompt,
           aspectRatio,

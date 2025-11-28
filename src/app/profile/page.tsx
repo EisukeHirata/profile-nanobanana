@@ -8,6 +8,7 @@ import { X, Download, Trash2 } from "lucide-react";
 import { GeneratedItem } from "@/utils/storage";
 import Gallery from "@/components/Gallery/Gallery";
 import PricingModal from "@/components/Pricing/PricingModal";
+import HistoryItem from "@/components/HistoryItem/HistoryItem";
 import styles from "./profile.module.css";
 
 interface UserProfile {
@@ -21,62 +22,55 @@ export default function ProfilePage() {
   const router = useRouter();
   const [history, setHistory] = useState<GeneratedItem[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isCreditsLoading, setIsCreditsLoading] = useState(true);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{ images: string[], currentIndex: number } | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ generationId: string, imageIndex: number } | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState<'idle' | 'deleting' | 'success'>('idle');
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'loading' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'loading') => {
+    setToast({ message, type });
+    if (type !== 'loading') {
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
 
   useEffect(() => {
-    console.log("ProfilePage: status changed:", status);
-    const fetchData = async () => {
-      if (status === "authenticated") {
-        console.log("ProfilePage: Starting fetch...");
-        
-        // Fetch Credits (Critical for UI)
-        try {
-          const creditsRes = await fetch("/api/user/credits");
-          if (creditsRes.ok) {
-            const creditsData = await creditsRes.json();
-            console.log("ProfilePage: Credits fetched", creditsData);
+    if (status === "unauthenticated") {
+      router.push("/");
+      return;
+    }
+
+    if (status === "authenticated") {
+      // Fetch Credits (Critical)
+      fetch("/api/user/credits")
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
             setProfile({
-              credits: creditsData.credits,
-              subscription_tier: creditsData.subscription_tier || "Free",
-              subscription_status: creditsData.subscription_status || "active"
+              credits: data.credits,
+              subscription_tier: data.subscription_tier || "Free",
+              subscription_status: data.subscription_status || "active"
             });
-          } else {
-            console.error("ProfilePage: Failed to fetch credits", creditsRes.status);
           }
-        } catch (error) {
-          console.error("ProfilePage: Error fetching credits", error);
-        }
+        })
+        .catch(err => console.error("Error fetching credits:", err))
+        .finally(() => setIsCreditsLoading(false));
 
-        // Fetch History (Can fail without breaking page)
-        try {
-          const historyRes = await fetch("/api/history");
-          if (historyRes.ok) {
-            const historyData = await historyRes.json();
-            console.log("ProfilePage: History fetched", historyData.history?.length);
-            if (historyData.history) {
-              setHistory(historyData.history);
-            }
-          } else {
-            console.error("ProfilePage: Failed to fetch history", historyRes.status);
+      // Fetch History (Non-critical)
+      fetch("/api/history")
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.history) {
+            setHistory(data.history);
           }
-        } catch (error) {
-          console.error("ProfilePage: Error fetching history", error);
-        }
-
-        console.log("ProfilePage: Setting isLoading to false");
-        setIsLoading(false);
-
-      } else if (status === "unauthenticated") {
-          console.log("ProfilePage: Unauthenticated, redirecting...");
-          setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [status]);
+        })
+        .catch(err => console.error("Error fetching history:", err))
+        .finally(() => setIsHistoryLoading(false));
+    }
+  }, [status, router]);
 
   const handleDeleteImage = (generationId: string, imageIndex: number) => {
     setDeleteConfirmation({ generationId, imageIndex });
@@ -84,34 +78,35 @@ export default function ProfilePage() {
 
   const confirmDelete = async () => {
     if (!deleteConfirmation) return;
-    const { generationId, imageIndex } = deleteConfirmation;
+    const { generationId } = deleteConfirmation;
 
     try {
+      setDeleteStatus('deleting');
       const res = await fetch("/api/generations/delete-image", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generationId, imageIndex }),
+        body: JSON.stringify({ generationId, deleteAll: true }),
       });
 
       if (!res.ok) throw new Error("Failed to delete image");
 
       const data = await res.json();
 
-      // Update local state
-      setHistory((prev) => {
-        return prev.map((item) => {
-          if (item.id === generationId) {
-            return { ...item, images: data.images };
-          }
-          return item;
-        }).filter((item) => item.images.length > 0); // Remove empty generations
-      });
+      // Remove the entire generation from local state
+      setHistory((prev) => prev.filter((item) => item.id !== generationId));
       
-      setDeleteConfirmation(null);
+      setDeleteStatus('success');
+      
+      // Close modal after 1.5 seconds
+      setTimeout(() => {
+        setDeleteConfirmation(null);
+        setDeleteStatus('idle');
+      }, 1500);
 
     } catch (error) {
       console.error("Delete failed", error);
-      alert("Failed to delete image");
+      showToast("Failed to delete image", "error");
+      setDeleteStatus('idle');
     }
   };
 
@@ -156,7 +151,7 @@ export default function ProfilePage() {
     });
   };
 
-  if (status === "loading" || isLoading) {
+  if (status === "loading" || isCreditsLoading) {
     return <div className={styles.loading}>Loading...</div>;
   }
 
@@ -168,26 +163,84 @@ export default function ProfilePage() {
     <main className={styles.main}>
       <PricingModal isOpen={isPricingOpen} onClose={() => setIsPricingOpen(false)} />
       
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: toast.type === 'error' ? '#ef4444' : '#10b981',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          fontWeight: 500
+        }}>
+          {toast.type === 'loading' && (
+            <div style={{
+              width: '16px',
+              height: '16px',
+              border: '2px solid white',
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+          )}
+          {toast.message}
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {deleteConfirmation && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <h3>Delete Image?</h3>
-            <p>Are you sure you want to delete this image? This action cannot be undone.</p>
-            <div className={styles.modalActions}>
-              <button 
-                className={styles.cancelButton} 
-                onClick={() => setDeleteConfirmation(null)}
-              >
-                Cancel
-              </button>
-              <button 
-                className={styles.deleteConfirmButton} 
-                onClick={confirmDelete}
-              >
-                Delete
-              </button>
-            </div>
+            {deleteStatus === 'idle' && (
+              <>
+                <h3>Delete Images?</h3>
+                <p>Are you sure you want to delete all images in this generation? This action cannot be undone.</p>
+                <div className={styles.modalActions}>
+                  <button 
+                    className={styles.cancelButton} 
+                    onClick={() => setDeleteConfirmation(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className={styles.deleteConfirmButton} 
+                    onClick={confirmDelete}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
+
+            {deleteStatus === 'deleting' && (
+              <div style={{ padding: '20px', textAlign: 'center' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  border: '3px solid var(--primary)',
+                  borderTopColor: 'transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 16px'
+                }} />
+                <p>Deleting image...</p>
+              </div>
+            )}
+
+            {deleteStatus === 'success' && (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#10b981' }}>
+                <div style={{ fontSize: '32px', marginBottom: '8px' }}>✓</div>
+                <p style={{ fontWeight: 600 }}>Deleted!</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -222,9 +275,12 @@ export default function ProfilePage() {
             )}
             
             <img 
-              src={lightbox.images[lightbox.currentIndex].startsWith("data:image") 
-                ? lightbox.images[lightbox.currentIndex] 
-                : `data:image/jpeg;base64,${lightbox.images[lightbox.currentIndex]}`} 
+              src={
+                lightbox.images[lightbox.currentIndex].startsWith("http") || 
+                lightbox.images[lightbox.currentIndex].startsWith("data:image") 
+                  ? lightbox.images[lightbox.currentIndex] 
+                  : `data:image/jpeg;base64,${lightbox.images[lightbox.currentIndex]}`
+              } 
               alt="Full view" 
               className={styles.lightboxImage} 
             />
@@ -290,7 +346,9 @@ export default function ProfilePage() {
 
       <div className={styles.content}>
         <h2 className={styles.sectionTitle}>History</h2>
-        {history.length === 0 ? (
+        {isHistoryLoading ? (
+          <div className={styles.loading}>Loading history...</div>
+        ) : history.length === 0 ? (
           <div className={styles.emptyState}>
             <p>No generated images yet.</p>
             <button onClick={() => router.push("/")} className={styles.createButton}>
@@ -300,50 +358,12 @@ export default function ProfilePage() {
         ) : (
           <div className={styles.historyGrid}>
             {history.map((item) => (
-              <div key={item.id} className={styles.historyItem}>
-                <div className={styles.itemHeader}>
-                  <span className={styles.date}>
-                    {new Date(item.timestamp).toLocaleDateString()}
-                  </span>
-                  <span className={styles.sceneBadge}>{item.scene}</span>
-                  <button 
-                    className={styles.deleteButton}
-                    onClick={() => handleDeleteImage(item.id, 0)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                
-                {/* Unified Display */}
-                <div 
-                  className={styles.imageStack} 
-                  onClick={() => setLightbox({ images: item.images, currentIndex: 0 })}
-                >
-                  {item.images.slice(0, 3).map((img, idx) => (
-                    <div 
-                      key={idx} 
-                      className={styles.stackItem}
-                      style={{ 
-                        transform: item.images.length > 1 ? `translate(${idx * 5}px, ${idx * 5}px)` : 'none',
-                        zIndex: 3 - idx,
-                        width: '200px',
-                        height: '200px',
-                        position: item.images.length > 1 ? 'absolute' : 'relative',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                        border: '2px solid var(--surface-highlight)',
-                      }}
-                    >
-                      <img 
-                        src={img.startsWith("data:image") ? img : `data:image/jpeg;base64,${img}`} 
-                        alt={`Stack ${idx}`} 
-                      />
-                    </div>
-                  ))}
-                  {item.images.length > 1 && (
-                    <div className={styles.stackCount}>+{item.images.length}</div>
-                  )}
-                </div>
-              </div>
+              <HistoryItem 
+                key={item.id} 
+                item={item} 
+                onDelete={(id) => handleDeleteImage(id, 0)}
+                onImageClick={(images, index) => setLightbox({ images, currentIndex: index })}
+              />
             ))}
           </div>
         )}

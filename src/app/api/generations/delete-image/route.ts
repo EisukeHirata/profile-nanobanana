@@ -10,10 +10,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { generationId, imageIndex } = await request.json();
+    const { generationId, imageIndex, deleteAll } = await request.json();
 
-    if (!generationId || imageIndex === undefined) {
-      return NextResponse.json({ error: "Missing generationId or imageIndex" }, { status: 400 });
+    if (!generationId) {
+      return NextResponse.json({ error: "Missing generationId" }, { status: 400 });
     }
 
     // 1. Fetch the generation to verify ownership and get current images
@@ -31,36 +31,85 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // 2. Remove the image at the specified index
-    const updatedImages = [...generation.images];
-    if (imageIndex >= 0 && imageIndex < updatedImages.length) {
-      updatedImages.splice(imageIndex, 1);
-    } else {
-        return NextResponse.json({ error: "Invalid image index" }, { status: 400 });
-    }
+    // 2. Handle deletion based on deleteAll flag
+    if (deleteAll) {
+      // Delete all images from storage
+      for (const imageUrl of generation.images) {
+        if (imageUrl.startsWith("http")) {
+          try {
+            const urlParts = imageUrl.split("/generated-images/");
+            if (urlParts.length === 2) {
+              const filePath = urlParts[1];
+              await supabaseAdmin.storage
+                .from("generated-images")
+                .remove([filePath]);
+              console.log("Deleted file from storage:", filePath);
+            }
+          } catch (storageError) {
+            console.error("Failed to delete file from storage:", storageError);
+          }
+        }
+      }
 
-    // 3. Update the generation in the database
-    // If no images left, we could delete the generation, but let's just update it for now
-    // or maybe delete if empty? Let's just update.
-    
-    if (updatedImages.length === 0) {
-        // Option: Delete the entire generation row if empty
-        const { error: deleteError } = await supabaseAdmin
-            .from("generations")
-            .delete()
-            .eq("id", generationId);
-            
-        if (deleteError) throw deleteError;
+      // Delete the entire generation record
+      const { error: deleteError } = await supabaseAdmin
+        .from("generations")
+        .delete()
+        .eq("id", generationId);
+
+      if (deleteError) throw deleteError;
+
+      return NextResponse.json({ success: true, images: [], deleted: true });
     } else {
+      // Delete single image (existing logic)
+      if (imageIndex === undefined) {
+        return NextResponse.json({ error: "Missing imageIndex" }, { status: 400 });
+      }
+
+      const updatedImages = [...generation.images];
+      if (imageIndex >= 0 && imageIndex < updatedImages.length) {
+        const imageToDelete = updatedImages[imageIndex];
+        
+        // If it's a URL (Supabase Storage), delete the file
+        if (imageToDelete.startsWith("http")) {
+          try {
+            const urlParts = imageToDelete.split("/generated-images/");
+            if (urlParts.length === 2) {
+              const filePath = urlParts[1];
+              await supabaseAdmin.storage
+                .from("generated-images")
+                .remove([filePath]);
+              console.log("Deleted file from storage:", filePath);
+            }
+          } catch (storageError) {
+            console.error("Failed to delete file from storage:", storageError);
+          }
+        }
+
+        updatedImages.splice(imageIndex, 1);
+      } else {
+        return NextResponse.json({ error: "Invalid image index" }, { status: 400 });
+      }
+
+      // 3. Update or delete the generation
+      if (updatedImages.length === 0) {
+        const { error: deleteError } = await supabaseAdmin
+          .from("generations")
+          .delete()
+          .eq("id", generationId);
+          
+        if (deleteError) throw deleteError;
+      } else {
         const { error: updateError } = await supabaseAdmin
           .from("generations")
           .update({ images: updatedImages })
           .eq("id", generationId);
 
         if (updateError) throw updateError;
-    }
+      }
 
-    return NextResponse.json({ success: true, images: updatedImages });
+      return NextResponse.json({ success: true, images: updatedImages });
+    }
 
   } catch (error: any) {
     console.error("Delete image error:", error);
