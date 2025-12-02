@@ -1,8 +1,0 @@
-{
-  "deploymentProtection": {
-    "bypassPaths": [
-      "/api/webhooks/stripe"
-    ]
-  }
-}
-
