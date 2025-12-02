@@ -24,15 +24,29 @@ export default function Home() {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("3:4");
   const [shotType, setShotType] = useState<ShotType>("Upper body");
   const [eyeContact, setEyeContact] = useState<EyeContact>("Direct");
-  const [quality, setQuality] = useState<"Standard" | "Pro">("Standard");
   const [imageCount, setImageCount] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [pricingMessage, setPricingMessage] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  // Better loading state
   if (status === "loading") {
-    return <div className={styles.loading}>Loading...</div>;
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#09090b',
+        color: '#e4e4e7'
+      }}>
+        <div className={styles.spinner} style={{ marginRight: '1rem' }} />
+        <span>Loading NanoProfile...</span>
+      </div>
+    );
   }
 
   if (!session) {
@@ -46,6 +60,18 @@ export default function Home() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setGeneratedImages([]);
+    setProgress(0);
+
+    // Simulate progress
+    const duration = 15000; // Estimated 15 seconds
+    const step = 100;
+    const increment = (step / duration) * 100;
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return prev; // Cap at 90% until complete
+        return prev + increment;
+      });
+    }, step);
     
     try {
       // Convert images to base64 with mimeType
@@ -80,7 +106,7 @@ export default function Home() {
           aspectRatio,
           shotType,
           eyeContact,
-          quality, // Pass quality to API
+          quality: "Pro", // Force Pro quality
           imageCount,
         }),
       });
@@ -89,29 +115,39 @@ export default function Home() {
 
       if (!response.ok) {
         if (response.status === 402) {
+          setPricingMessage("You don't have enough credits to generate these images. Please upgrade or top up.");
           setIsPricingOpen(true);
-          throw new Error("Insufficient credits. Please upgrade or top up.");
+          return; // Don't throw error to avoid alert
         }
         throw new Error(data.error || data.message || "Failed to generate images");
       }
 
       if (data.images && Array.isArray(data.images)) {
         setGeneratedImages(data.images);
+        setProgress(100);
       }
     } catch (error: any) {
       console.error("Generation failed", error);
       alert(error.message || "Failed to generate images. Please check your API key and quotas.");
     } finally {
       setIsGenerating(false);
+      clearInterval(interval);
     }
   };
 
-  const costPerImage = quality === "Pro" ? 5 : 1;
+  const costPerImage = 5; // Always Pro quality
   const totalCost = imageCount * costPerImage;
 
   return (
     <main className={styles.main}>
-      <PricingModal isOpen={isPricingOpen} onClose={() => setIsPricingOpen(false)} />
+      <PricingModal 
+        isOpen={isPricingOpen} 
+        onClose={() => {
+          setIsPricingOpen(false);
+          setPricingMessage(null);
+        }}
+        message={pricingMessage}
+      />
       
       {/* Lightbox */}
       {lightboxImage && (
@@ -193,8 +229,6 @@ export default function Home() {
                 setShotType={setShotType}
                 eyeContact={eyeContact}
                 setEyeContact={setEyeContact}
-                quality={quality}
-                setQuality={setQuality}
                 imageCount={imageCount}
                 setImageCount={setImageCount}
               />
@@ -217,24 +251,59 @@ export default function Home() {
 
         <div className={styles.rightPanel}>
           <h2 className={styles.sectionTitle}>Generated Results</h2>
+          
+          {isGenerating && (
+            <div style={{ 
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center',
+              width: '100%',
+              minHeight: '300px'
+            }}>
+              <div className={styles.progressBarContainer} style={{ 
+                width: '80%', 
+                maxWidth: '400px',
+                height: '8px', 
+                backgroundColor: '#27272a', 
+                borderRadius: '4px', 
+                overflow: 'hidden',
+                marginBottom: '1rem'
+              }}>
+                <div style={{ 
+                  width: `${progress}%`, 
+                  height: '100%', 
+                  backgroundColor: '#8b5cf6', 
+                  transition: 'width 0.1s ease' 
+                }} />
+              </div>
+              <p style={{ color: '#a1a1aa', fontSize: '1rem', textAlign: 'center' }}>
+                Creating your masterpiece... {Math.round(progress)}%
+              </p>
+            </div>
+          )}
+
           {generatedImages.length > 0 ? (
             <Gallery 
               images={generatedImages} 
               onImageClick={(src) => setLightboxImage(src)}
             />
           ) : (
-            <div style={{ 
-              flex: 1, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: '#52525b',
-              border: '2px dashed #27272a',
-              borderRadius: '1rem',
-              margin: '1rem 0'
-            }}>
-              <p>Generated images will appear here</p>
-            </div>
+            !isGenerating && (
+              <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: '#52525b',
+                border: '2px dashed #27272a',
+                borderRadius: '1rem',
+                margin: '1rem 0'
+              }}>
+                <p>Generated images will appear here</p>
+              </div>
+            )
           )}
         </div>
       </div>

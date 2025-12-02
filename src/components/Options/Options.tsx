@@ -14,8 +14,6 @@ interface OptionsProps {
   setShotType: (type: ShotType) => void;
   eyeContact: EyeContact;
   setEyeContact: (contact: EyeContact) => void;
-  quality: "Standard" | "Pro";
-  setQuality: (quality: "Standard" | "Pro") => void;
   imageCount: number;
   setImageCount: (count: number) => void;
 }
@@ -47,8 +45,6 @@ export default function Options({
   setShotType,
   eyeContact,
   setEyeContact,
-  quality,
-  setQuality,
   imageCount,
   setImageCount
 }: OptionsProps) {
@@ -86,26 +82,6 @@ export default function Options({
               <span className={styles.cardLabel}>{type.label}</span>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div className={styles.optionGroup}>
-        <label className={styles.label}>Quality</label>
-        <div className={styles.grid}>
-          <div
-            className={`${styles.card} ${quality === "Standard" ? styles.cardSelected : ""}`}
-            onClick={() => setQuality("Standard")}
-          >
-            <div className={styles.icon}>⚡</div>
-            <span className={styles.cardLabel}>Standard</span>
-          </div>
-          <div
-            className={`${styles.card} ${quality === "Pro" ? styles.cardSelected : ""}`}
-            onClick={() => setQuality("Pro")}
-          >
-            <div className={styles.icon}>✨</div>
-            <span className={styles.cardLabel}>Pro</span>
-          </div>
         </div>
       </div>
 

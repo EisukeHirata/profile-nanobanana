@@ -7,9 +7,10 @@ import { X, Check, Zap } from "lucide-react";
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  message?: string | null;
 }
 
-export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
+export default function PricingModal({ isOpen, onClose, message }: PricingModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -44,6 +45,20 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
         </button>
         
         <h2 className={styles.title}>Upgrade Your Profile</h2>
+        {message && (
+          <div style={{ 
+            backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.2)', 
+            color: '#ef4444', 
+            padding: '0.75rem', 
+            borderRadius: '0.5rem',
+            marginBottom: '1rem',
+            fontSize: '0.9rem',
+            textAlign: 'center'
+          }}>
+            {message}
+          </div>
+        )}
         <p className={styles.subtitle}>Choose a plan or top up credits as you go.</p>
 
         <div className={styles.grid}>
