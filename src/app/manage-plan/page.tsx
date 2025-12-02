@@ -128,7 +128,7 @@ export default function ManagePlanPage() {
               <h3 className={styles.planCardTitle}>Starter</h3>
               <div className={styles.planCardPrice}>$9.99<span>/mo</span></div>
               <ul className={styles.planCardFeatures}>
-                <li>✓ 40 Credits / month</li>
+                <li>✓ 25 Credits / month</li>
               </ul>
               <button 
                 className={styles.button}
@@ -144,7 +144,7 @@ export default function ManagePlanPage() {
               <h3 className={styles.planCardTitle}>Pro</h3>
               <div className={styles.planCardPrice}>$19.99<span>/mo</span></div>
               <ul className={styles.planCardFeatures}>
-                <li>✓ 90 Credits / month</li>
+                <li>✓ 55 Credits / month</li>
               </ul>
               <button 
                 className={`${styles.button} ${styles.primaryButton}`}
@@ -159,7 +159,7 @@ export default function ManagePlanPage() {
               <h3 className={styles.planCardTitle}>Premium</h3>
               <div className={styles.planCardPrice}>$49.99<span>/mo</span></div>
               <ul className={styles.planCardFeatures}>
-                <li>✓ 240 Credits / month</li>
+                <li>✓ 140 Credits / month</li>
               </ul>
               <button 
                 className={styles.button}
@@ -177,7 +177,7 @@ export default function ManagePlanPage() {
           <div className={styles.creditPacksGrid}>
             <div className={styles.creditPackCard}>
               <div className={styles.creditPackAmount}>10 Credits</div>
-              <div className={styles.creditPackPrice}>$4.99</div>
+              <div className={styles.creditPackPrice}>$4.49</div>
               <button 
                 className={`${styles.button} ${styles.primaryButton}`}
                 onClick={() => setIsPricingOpen(true)}
@@ -187,8 +187,19 @@ export default function ManagePlanPage() {
             </div>
 
             <div className={styles.creditPackCard}>
-              <div className={styles.creditPackAmount}>50 Credits</div>
-              <div className={styles.creditPackPrice}>$17.99</div>
+              <div className={styles.creditPackAmount}>30 Credits</div>
+              <div className={styles.creditPackPrice}>$11.99</div>
+              <button 
+                className={`${styles.button} ${styles.primaryButton}`}
+                onClick={() => setIsPricingOpen(true)}
+              >
+                Buy
+              </button>
+            </div>
+
+            <div className={styles.creditPackCard}>
+              <div className={styles.creditPackAmount}>100 Credits</div>
+              <div className={styles.creditPackPrice}>$29.99</div>
               <button 
                 className={`${styles.button} ${styles.primaryButton}`}
                 onClick={() => setIsPricingOpen(true)}

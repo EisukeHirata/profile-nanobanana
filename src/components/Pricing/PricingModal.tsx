@@ -70,7 +70,7 @@ export default function PricingModal({ isOpen, onClose, message }: PricingModalP
               <div className={styles.price}>$9.99<span>/mo</span></div>
             </div>
             <ul className={styles.features}>
-              <li><Check size={16} /> 40 Credits / month</li>
+              <li><Check size={16} /> 25 Credits / month</li>
               <li><Check size={16} /> Standard Speed</li>
               <li><Check size={16} /> No Watermark</li>
             </ul>
@@ -90,7 +90,7 @@ export default function PricingModal({ isOpen, onClose, message }: PricingModalP
               <div className={styles.price}>$19.99<span>/mo</span></div>
             </div>
             <ul className={styles.features}>
-              <li><Check size={16} /> 90 Credits / month</li>
+              <li><Check size={16} /> 55 Credits / month</li>
               <li><Check size={16} /> Fast Generation</li>
               <li><Check size={16} /> Priority Support</li>
             </ul>
@@ -109,7 +109,7 @@ export default function PricingModal({ isOpen, onClose, message }: PricingModalP
               <div className={styles.price}>$49.99<span>/mo</span></div>
             </div>
             <ul className={styles.features}>
-              <li><Check size={16} /> 240 Credits / month</li>
+              <li><Check size={16} /> 140 Credits / month</li>
               <li><Check size={16} /> Max Speed</li>
               <li><Check size={16} /> Early Access Features</li>
             </ul>
@@ -131,7 +131,7 @@ export default function PricingModal({ isOpen, onClose, message }: PricingModalP
           <div className={styles.creditPack}>
             <div className={styles.packInfo}>
               <span className={styles.packAmount}>10 Credits</span>
-              <span className={styles.packPrice}>$4.99</span>
+              <span className={styles.packPrice}>$4.49</span>
             </div>
             <button
               onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_SMALL!, "payment")}
@@ -143,8 +143,8 @@ export default function PricingModal({ isOpen, onClose, message }: PricingModalP
           </div>
           <div className={styles.creditPack}>
             <div className={styles.packInfo}>
-              <span className={styles.packAmount}>50 Credits</span>
-              <span className={styles.packPrice}>$17.99</span>
+              <span className={styles.packAmount}>30 Credits</span>
+              <span className={styles.packPrice}>$11.99</span>
             </div>
             <button
               onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_LARGE!, "payment")}
@@ -152,6 +152,19 @@ export default function PricingModal({ isOpen, onClose, message }: PricingModalP
               disabled={loading === process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_LARGE}
             >
               {loading === process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_LARGE ? "..." : "Buy"}
+            </button>
+          </div>
+          <div className={styles.creditPack}>
+            <div className={styles.packInfo}>
+              <span className={styles.packAmount}>100 Credits</span>
+              <span className={styles.packPrice}>$29.99</span>
+            </div>
+            <button
+              onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_XLARGE!, "payment")}
+              className={styles.buyButton}
+              disabled={loading === process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_XLARGE}
+            >
+              {loading === process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_XLARGE ? "..." : "Buy"}
             </button>
           </div>
         </div>

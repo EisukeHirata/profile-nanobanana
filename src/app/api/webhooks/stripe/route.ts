@@ -48,11 +48,14 @@ export async function POST(request: Request) {
           if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_SMALL) {
             creditsToAdd = 10;
           } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_LARGE) {
-            creditsToAdd = 50;
+            creditsToAdd = 30;
+          } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_XLARGE) {
+            creditsToAdd = 100;
           } else {
-            // Fallback logic
-            if (session.amount_total === 499) creditsToAdd = 10;
-            if (session.amount_total === 1799) creditsToAdd = 50;
+            // Fallback logic (amounts in cents)
+            if (session.amount_total === 449) creditsToAdd = 10;
+            if (session.amount_total === 1199) creditsToAdd = 30;
+            if (session.amount_total === 2999) creditsToAdd = 100;
           }
 
           console.log(`Credits to add: ${creditsToAdd}`);
@@ -79,7 +82,7 @@ export async function POST(request: Request) {
 
           await supabaseAdmin.from("profiles").upsert({
             email: userEmail, // Required for upsert
-            credits: existingProfile?.credits ?? 55, // Default to 50+5 if new, or keep existing
+            credits: existingProfile?.credits ?? 25, // Default to Starter plan credits if new, or keep existing
             subscription_status: subscription.status,
             subscription_tier: getTierName(priceId),
             stripe_customer_id: session.customer as string,
@@ -153,9 +156,9 @@ export async function POST(request: Request) {
 }
 
 function getCreditsForPrice(priceId: string): number {
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_BASIC) return 40;
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PRO) return 90;
-  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PREMIUM) return 240;
+  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_BASIC) return 25;
+  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PRO) return 55;
+  if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_SUB_PREMIUM) return 140;
   return 0;
 }
 
