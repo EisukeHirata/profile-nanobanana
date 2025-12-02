@@ -336,7 +336,7 @@ export default function ProfilePage() {
             </div>
             <button 
               className={styles.manageButton}
-              onClick={() => setIsPricingOpen(true)}
+              onClick={() => router.push('/manage-plan')}
             >
               Manage Plan / Buy Credits
             </button>

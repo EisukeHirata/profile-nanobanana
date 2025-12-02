@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+// Re-trigger compilation
 import styles from "./Options.module.css";
 
 export type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9";

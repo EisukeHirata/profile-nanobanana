@@ -16,7 +16,7 @@ export async function GET() {
 
   const { data: profile, error } = await supabaseAdmin
     .from("profiles")
-    .select("credits")
+    .select("credits, subscription_tier, subscription_status")
     .eq("email", session.user.email)
     .single();
     
@@ -24,9 +24,12 @@ export async function GET() {
       console.error("API: /api/user/credits - Error fetching profile:", error);
   }
 
-  console.log("API: /api/user/credits - Credits:", profile?.credits);
+  console.log("API: /api/user/credits - Profile:", profile);
 
-  // If no profile exists yet, return default (e.g., 0 or 5 if we auto-create)
-  // Ideally, we create profile on signup. For now, return 0.
-  return NextResponse.json({ credits: profile?.credits ?? 0 });
+  // If no profile exists yet, return defaults
+  return NextResponse.json({ 
+    credits: profile?.credits ?? 0,
+    subscription_tier: profile?.subscription_tier ?? null,
+    subscription_status: profile?.subscription_status ?? null
+  });
 }

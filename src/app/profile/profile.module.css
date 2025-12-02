@@ -465,3 +465,67 @@
     transform: rotate(360deg);
   }
 }
+
+@media (max-width: 768px) {
+  .main {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    margin-bottom: 2rem;
+  }
+
+  .headerContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .title {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+  }
+
+  .profileCard {
+    padding: 1rem;
+  }
+
+  .userInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .planInfo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .stat {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .manageButton {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+
+  .historyGrid {
+    grid-template-columns: 1fr;
+  }
+}

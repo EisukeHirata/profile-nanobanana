@@ -123,6 +123,26 @@ export async function POST(request: Request) {
         }
         break;
       }
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+        const status = subscription.status;
+        const priceId = subscription.items.data[0].price.id;
+
+        console.log(`Subscription updated/deleted. Customer: ${customerId}, Status: ${status}`);
+
+        // Update profile
+        await supabaseAdmin
+          .from("profiles")
+          .update({
+            subscription_status: status,
+            subscription_tier: status === 'active' || status === 'trialing' ? getTierName(priceId) : 'free'
+          })
+          .eq("stripe_customer_id", customerId);
+        
+        break;
+      }
     }
   } catch (error) {
     console.error("Webhook handler failed:", error);

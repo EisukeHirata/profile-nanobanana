@@ -114,4 +114,41 @@
     height: auto;
     overflow-y: auto;
   }
+
+  .mobileHidden {
+    display: none;
+  }
+
+  .mobileVisible {
+    display: flex;
+  }
+
+  .mobileHeader {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .mobileBackButton {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.5rem 0;
+  }
+
+  .mobileBackButton:hover {
+    text-decoration: underline;
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobileHeader {
+    display: none;
+  }
+
+  .mobileHidden,
+  .mobileVisible {
+    display: flex;
+  }
 }

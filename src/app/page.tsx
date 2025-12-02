@@ -31,6 +31,7 @@ export default function Home() {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [pricingMessage, setPricingMessage] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [showMobileResults, setShowMobileResults] = useState(false);
 
   // Better loading state
   if (status === "loading") {
@@ -59,6 +60,7 @@ export default function Home() {
 
   const handleGenerate = async () => {
     setIsGenerating(true);
+    setShowMobileResults(true);
     setGeneratedImages([]);
     setProgress(0);
 
@@ -205,7 +207,7 @@ export default function Home() {
       </header>
 
       <div className={styles.content}>
-        <div className={styles.leftPanel}>
+        <div className={`${styles.leftPanel} ${showMobileResults ? styles.mobileHidden : ''}`}>
           <div className={styles.scrollContent}>
             <section>
               <h2 className={styles.sectionTitle}>1. Upload Photos</h2>
@@ -249,7 +251,16 @@ export default function Home() {
           </div>
         </div>
 
-        <div className={styles.rightPanel}>
+        <div className={`${styles.rightPanel} ${showMobileResults ? styles.mobileVisible : styles.mobileHidden}`}>
+          <div className={styles.mobileHeader}>
+            <button 
+              className={styles.mobileBackButton}
+              onClick={() => setShowMobileResults(false)}
+            >
+              ← Back to Edit
+            </button>
+          </div>
+
           <h2 className={styles.sectionTitle}>Generated Results</h2>
           
           {isGenerating && (
