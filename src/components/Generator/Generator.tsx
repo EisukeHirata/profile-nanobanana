@@ -27,7 +27,9 @@ export default function Generator({ onGenerate, isGenerating, isDisabled, cost }
         ) : (
           <>
             <Sparkles size={20} />
-            <span>Generate Photos ({cost} Credits)</span>
+            <span>
+              Generate Photos ({cost} Credit{cost === 1 ? "" : "s"})
+            </span>
           </>
         )}
       </button>

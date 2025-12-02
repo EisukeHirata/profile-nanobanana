@@ -137,7 +137,7 @@ export default function Home() {
     }
   };
 
-  const costPerImage = 5; // Always Pro quality
+  const costPerImage = 1; // Charge 1 credit per image regardless of quality
   const totalCost = imageCount * costPerImage;
 
   return (

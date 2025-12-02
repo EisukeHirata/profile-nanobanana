@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       .single();
 
     const currentCredits = profile?.credits ?? 0;
-    const costPerImage = quality === "Pro" ? 5 : 1;
+    const costPerImage = 1; // Every generated image consumes 1 credit
     const cost = imageCount * costPerImage;
 
     if (currentCredits < cost) {
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
 
     // Deduct credits
     await supabaseAdmin.from("profiles").update({
-      credits: currentCredits - allGeneratedImages.length
+      credits: currentCredits - cost
     }).eq("email", session.user.email);
 
     // Save to Supabase if user is authenticated
