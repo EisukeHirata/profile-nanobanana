@@ -94,3 +94,5 @@ stripe trigger checkout.session.completed
 
 本番環境では、StripeダッシュボードのWebhooksセクションで、本番URLを設定し、本番用のwebhookシークレットを使用します。
 
+
+

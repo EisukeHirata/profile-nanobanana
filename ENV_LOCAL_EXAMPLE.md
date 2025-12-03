@@ -68,3 +68,5 @@ STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxx
 - テスト環境と本番環境で異なるPrice IDを使用します
 - 本番環境では`STRIPE_SECRET_KEY`と`STRIPE_WEBHOOK_SECRET`も本番用の値に変更してください
 
+
+

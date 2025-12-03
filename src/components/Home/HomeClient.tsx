@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import ImageUpload from "@/components/ImageUpload/ImageUpload";
 import SceneSelector, { SceneId } from "@/components/SceneSelector/SceneSelector";
@@ -15,6 +15,7 @@ import PricingModal from "@/components/Pricing/PricingModal";
 
 import { X } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
+import heic2any from "heic2any";
 
 export default function HomeClient() {
   const { t } = useLocale();
@@ -33,14 +34,53 @@ export default function HomeClient() {
   const [pricingMessage, setPricingMessage] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [showMobileResults, setShowMobileResults] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isConvertingHeic, setIsConvertingHeic] = useState(false);
 
   const handleImagesSelected = (files: File[]) => {
     setSelectedImages(files);
   };
 
+  // Check if file is HEIC/HEIF format
+  const isHeicFile = (file: File): boolean => {
+    const heicTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+    const heicExtensions = ['.heic', '.heif'];
+    const fileName = file.name.toLowerCase();
+    return heicTypes.includes(file.type.toLowerCase()) || 
+           heicExtensions.some(ext => fileName.endsWith(ext));
+  };
+
+  // Convert HEIC file to JPEG
+  const convertHeicToJpeg = async (file: File): Promise<File> => {
+    try {
+      const result = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.92
+      });
+      
+      // heic2any can return Blob or Blob[]
+      const convertedBlob = Array.isArray(result) ? result[0] : result;
+      
+      if (!(convertedBlob instanceof Blob)) {
+        throw new Error("変換結果が不正です");
+      }
+      
+      // Convert Blob to File
+      return new File([convertedBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+        type: 'image/jpeg',
+        lastModified: file.lastModified
+      });
+    } catch (error) {
+      console.error("HEIC conversion failed:", error);
+      throw new Error("HEIC画像の変換に失敗しました。別の形式でお試しください。");
+    }
+  };
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     setShowMobileResults(true);
+    setGenerationError(null);
     setGeneratedImages([]);
     setProgress(0);
 
@@ -54,11 +94,28 @@ export default function HomeClient() {
         return prev + increment;
       });
     }, step);
+
+    const handleHeicError = () => {
+      setGenerationError("画像が生成されませんでした。対応していない画像形式の可能性があります。クレジットは消費されていません。HEIC画像はJPEG/PNGに変換してから再試行してください。");
+      setProgress(0);
+    };
     
     try {
-      // Convert images to base64 with mimeType
-      const processedImages = await Promise.all(
+      // Step 1: Convert HEIC files to JPEG if needed
+      setIsConvertingHeic(true);
+      const convertedImages = await Promise.all(
         selectedImages.map(async (file) => {
+          if (isHeicFile(file)) {
+            return await convertHeicToJpeg(file);
+          }
+          return file;
+        })
+      );
+      setIsConvertingHeic(false);
+
+      // Step 2: Convert images to base64 with mimeType
+      const processedImages = await Promise.all(
+        convertedImages.map(async (file) => {
           return new Promise<{ data: string; mimeType: string }>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -101,6 +158,10 @@ export default function HomeClient() {
           setIsPricingOpen(true);
           return; // Don't throw error to avoid alert
         }
+        if (typeof data.error === "string" && data.error.toLowerCase().includes("string did not match the expected pattern")) {
+          handleHeicError();
+          return;
+        }
         throw new Error(data.error || data.message || "Failed to generate images");
       }
 
@@ -109,15 +170,31 @@ export default function HomeClient() {
         setProgress(100);
         // Refresh session to update credits
         await update();
+      } else if (data.error && data.error.toLowerCase().includes("string did not match the expected pattern")) {
+        handleHeicError();
       }
     } catch (error: any) {
       console.error("Generation failed", error);
-      alert(error.message || "Failed to generate images. Please check your API key and quotas.");
+      setIsConvertingHeic(false);
+      if (typeof error.message === "string" && error.message.toLowerCase().includes("string did not match the expected pattern")) {
+        handleHeicError();
+      } else if (typeof error.message === "string" && error.message.includes("HEIC画像の変換に失敗")) {
+        setGenerationError(error.message + " クレジットは消費されていません。");
+        setProgress(0);
+      } else {
+        alert(error.message || "Failed to generate images. Please check your API key and quotas.");
+      }
     } finally {
       setIsGenerating(false);
       clearInterval(interval);
     }
   };
+
+  useEffect(() => {
+    if (showMobileResults && typeof window !== "undefined" && window.innerWidth <= 768) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [showMobileResults]);
 
   const costPerImage = 1; // Charge 1 credit per image regardless of quality
   const totalCost = imageCount * costPerImage;
@@ -255,25 +332,44 @@ export default function HomeClient() {
               width: '100%',
               minHeight: '300px'
             }}>
-              <div className={styles.progressBarContainer} style={{ 
-                width: '80%', 
-                maxWidth: '400px',
-                height: '8px', 
-                backgroundColor: '#27272a', 
-                borderRadius: '4px', 
-                overflow: 'hidden',
-                marginBottom: '1rem'
-              }}>
-                <div style={{ 
-                  width: `${progress}%`, 
-                  height: '100%', 
-                  backgroundColor: '#8b5cf6', 
-                  transition: 'width 0.1s ease' 
-                }} />
-              </div>
-              <p style={{ color: '#a1a1aa', fontSize: '1rem', textAlign: 'center' }}>
-                {t("home.results.generating")} {Math.round(progress)}%
-              </p>
+              {isConvertingHeic ? (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    border: '4px solid #27272a',
+                    borderTop: '4px solid #8b5cf6',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    margin: '0 auto 1rem'
+                  }} />
+                  <p style={{ color: '#a1a1aa', fontSize: '1rem' }}>
+                    HEIC画像を変換中...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.progressBarContainer} style={{ 
+                    width: '80%', 
+                    maxWidth: '400px',
+                    height: '8px', 
+                    backgroundColor: '#27272a', 
+                    borderRadius: '4px', 
+                    overflow: 'hidden',
+                    marginBottom: '1rem'
+                  }}>
+                    <div style={{ 
+                      width: `${progress}%`, 
+                      height: '100%', 
+                      backgroundColor: '#8b5cf6', 
+                      transition: 'width 0.1s ease' 
+                    }} />
+                  </div>
+                  <p style={{ color: '#a1a1aa', fontSize: '1rem', textAlign: 'center' }}>
+                    {t("home.results.generating")} {Math.round(progress)}%
+                  </p>
+                </>
+              )}
             </div>
           )}
 
@@ -284,17 +380,33 @@ export default function HomeClient() {
             />
           ) : (
             !isGenerating && (
-              <div style={{ 
-                flex: 1, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                color: '#52525b',
-                border: '2px dashed #27272a',
-                borderRadius: '1rem',
-                margin: '1rem 0'
-              }}>
-                <p>{t("home.results.empty")}</p>
+              <div style={{ width: '100%' }}>
+                {generationError ? (
+                  <div style={{
+                    padding: '1.25rem',
+                    borderRadius: '1rem',
+                    backgroundColor: 'rgba(239,68,68,0.1)',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    color: '#fca5a5',
+                    textAlign: 'center',
+                    lineHeight: 1.6
+                  }}>
+                    {generationError}
+                  </div>
+                ) : (
+                  <div style={{ 
+                    flex: 1, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: '#52525b',
+                    border: '2px dashed #27272a',
+                    borderRadius: '1rem',
+                    margin: '1rem 0'
+                  }}>
+                    <p>{t("home.results.empty")}</p>
+                  </div>
+                )}
               </div>
             )
           )}
