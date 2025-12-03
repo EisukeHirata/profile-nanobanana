@@ -97,6 +97,7 @@ const translations: Record<Locale, Record<string, string>> = {
     "lp.features.standout.title": "Stand Out Everywhere",
     "lp.features.standout.desc": "Boost your presence on LinkedIn, Instagram, and more.",
     "lp.signin": "Sign In",
+    "lp.signout": "Sign out",
     "options.size": "Image Size",
     "options.shot": "Shot Type",
     "options.eye": "Eye Contact",

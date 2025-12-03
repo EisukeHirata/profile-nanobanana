@@ -74,3 +74,24 @@
   background: rgba(251, 191, 36, 0.2);
   transform: translateY(-1px);
 }
+
+.langButton {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: transparent;
+  color: #a1a1aa;
+  border: 1px solid #3f3f46;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.langButton:hover {
+  background: #27272a;
+  color: white;
+  border-color: #52525b;
+}
