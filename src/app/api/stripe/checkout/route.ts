@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { priceId, mode } = await request.json();
+    const { priceId, mode, currency } = await request.json();
 
     if (!priceId || !mode) {
       return NextResponse.json({ error: "Missing priceId or mode" }, { status: 400 });
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       ],
       success_url: `${baseUrl}/profile?success=true`,
       cancel_url: `${baseUrl}/?canceled=true`,
+      locale: currency === 'JPY' ? 'ja' : 'auto',
       metadata: {
         userId: session.user.email,
         priceId: priceId,

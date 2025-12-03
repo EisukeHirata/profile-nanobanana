@@ -4,12 +4,14 @@ import React, { useState, useCallback, useRef } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "./ImageUpload.module.css";
+import { useLocale } from "@/contexts/LocaleContext";
 
 interface ImageUploadProps {
   onImagesSelected: (files: File[]) => void;
 }
 
 export default function ImageUpload({ onImagesSelected }: ImageUploadProps) {
+  const { t } = useLocale();
   const [isDragging, setIsDragging] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,9 +83,9 @@ export default function ImageUpload({ onImagesSelected }: ImageUploadProps) {
           <Upload size={32} />
         </div>
         
-        <h3 className={styles.title}>Upload your photos</h3>
+        <h3 className={styles.title}>{t("upload.title")}</h3>
         <p className={styles.subtitle}>
-          Drag & drop or click to select multiple face photos
+          {t("upload.subtitle")}
         </p>
       </div>
 

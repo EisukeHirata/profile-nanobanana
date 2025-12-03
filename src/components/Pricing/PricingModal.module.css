@@ -189,61 +189,67 @@
 
 .creditPacks {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
 }
 
 .creditPack {
   background: #27272a;
   border: 1px solid #3f3f46;
-  border-radius: 0.75rem;
-  padding: 1rem;
+  border-radius: 1rem;
+  padding: 2rem;
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  position: relative;
   transition: transform 0.2s;
+  height: 100%;
 }
 
 .creditPack:hover {
-  transform: translateY(-2px);
+  transform: translateY(-5px);
   border-color: #52525b;
 }
 
 .packInfo {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex: 1;
 }
 
 .packAmount {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.packPrice {
+  font-size: 2rem;
   font-weight: 700;
   color: white;
 }
 
-.packPrice {
-  font-size: 0.875rem;
-  color: #a1a1aa;
-}
-
 .buyButton {
-  margin-left: auto;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
   background: #fbbf24;
   border: none;
   color: black;
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.5rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 700;
   transition: all 0.2s;
+  margin-left: 0;
 }
 
 .buyButton:hover {
   background: #f59e0b;
-  transform: scale(1.05);
+  transform: none;
 }
 
 .buyButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }

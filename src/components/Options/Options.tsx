@@ -3,6 +3,7 @@
 import React from "react";
 // Re-trigger compilation
 import styles from "./Options.module.css";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export type AspectRatio = "1:1" | "3:4" | "4:3" | "9:16" | "16:9";
 export type ShotType = "Upper body" | "Full body" | "Close up";
@@ -49,10 +50,12 @@ export default function Options({
   imageCount,
   setImageCount
 }: OptionsProps) {
+  const { t } = useLocale();
+
   return (
     <div className={styles.container}>
       <div className={styles.optionGroup}>
-        <label className={styles.label}>Image Size</label>
+        <label className={styles.label}>{t("options.size")}</label>
         <div className={styles.grid}>
           {ratios.map((ratio) => (
             <div
@@ -71,7 +74,7 @@ export default function Options({
       </div>
 
       <div className={styles.optionGroup}>
-        <label className={styles.label}>Shot Type</label>
+        <label className={styles.label}>{t("options.shot")}</label>
         <div className={styles.grid}>
           {shotTypes.map((type) => (
             <div
@@ -87,7 +90,7 @@ export default function Options({
       </div>
 
       <div className={styles.optionGroup}>
-        <label className={styles.label}>Eye Contact</label>
+        <label className={styles.label}>{t("options.eye")}</label>
         <div className={styles.grid}>
           {eyeContacts.map((contact) => (
             <div
@@ -104,7 +107,7 @@ export default function Options({
 
       <div className={styles.optionGroup}>
         <label className={styles.label}>
-          Number of Images
+          {t("options.count")}
           <span style={{ color: "var(--primary)" }}>{imageCount}</span>
         </label>
         <select 
@@ -112,10 +115,10 @@ export default function Options({
           value={imageCount}
           onChange={(e) => setImageCount(Number(e.target.value))}
         >
-          <option value={1}>1 Image</option>
-          <option value={2}>2 Images</option>
-          <option value={3}>3 Images</option>
-          <option value={4}>4 Images</option>
+          <option value={1}>1 {t("options.image")}</option>
+          <option value={2}>2 {t("options.images")}</option>
+          <option value={3}>3 {t("options.images")}</option>
+          <option value={4}>4 {t("options.images")}</option>
         </select>
       </div>
     </div>

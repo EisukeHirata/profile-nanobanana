@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import Footer from "@/components/Footer/Footer";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+import { LocaleProvider } from "@/contexts/LocaleContext";
 
 export const metadata: Metadata = {
   title: "NanoProfile - AI Profile Photos",
@@ -21,10 +16,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`} suppressHydrationWarning>
+      <body className="antialiased" suppressHydrationWarning>
         <Providers>
-          {children}
-          <Footer />
+          <LocaleProvider>
+            {children}
+            <Footer />
+          </LocaleProvider>
         </Providers>
       </body>
     </html>

@@ -15,9 +15,11 @@ import LandingPage from "@/components/LandingPage/LandingPage";
 import PricingModal from "@/components/Pricing/PricingModal";
 
 import { X, Maximize2 } from "lucide-react";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { t } = useLocale();
+  const { data: session, status, update } = useSession();
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [selectedScene, setSelectedScene] = useState<SceneId>("casual");
   const [customPrompt, setCustomPrompt] = useState("");
@@ -45,7 +47,7 @@ export default function Home() {
         color: '#e4e4e7'
       }}>
         <div className={styles.spinner} style={{ marginRight: '1rem' }} />
-        <span>Loading NanoProfile...</span>
+        <span>{t("home.loading")}</span>
       </div>
     );
   }
@@ -127,6 +129,8 @@ export default function Home() {
       if (data.images && Array.isArray(data.images)) {
         setGeneratedImages(data.images);
         setProgress(100);
+        // Refresh session to update credits
+        await update();
       }
     } catch (error: any) {
       console.error("Generation failed", error);
@@ -210,12 +214,12 @@ export default function Home() {
         <div className={`${styles.leftPanel} ${showMobileResults ? styles.mobileHidden : ''}`}>
           <div className={styles.scrollContent}>
             <section>
-              <h2 className={styles.sectionTitle}>1. Upload Photos</h2>
+              <h2 className={styles.sectionTitle}>{t("home.upload.title")}</h2>
               <ImageUpload onImagesSelected={handleImagesSelected} />
             </section>
 
             <section>
-              <h2 className={styles.sectionTitle}>2. Choose Style</h2>
+              <h2 className={styles.sectionTitle}>{t("home.style.title")}</h2>
               <SceneSelector 
                 selectedScene={selectedScene} 
                 onSelectScene={setSelectedScene} 
@@ -223,7 +227,7 @@ export default function Home() {
             </section>
 
             <section>
-              <h2 className={styles.sectionTitle}>3. Options</h2>
+              <h2 className={styles.sectionTitle}>{t("home.options.title")}</h2>
               <Options 
                 aspectRatio={aspectRatio}
                 setAspectRatio={setAspectRatio}
@@ -236,7 +240,7 @@ export default function Home() {
               />
               <textarea 
                 className={styles.promptInput}
-                placeholder="Additional details (e.g., 'wearing a blue suit', 'smiling')..."
+                placeholder={t("home.prompt.placeholder")}
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
               />
@@ -257,11 +261,11 @@ export default function Home() {
               className={styles.mobileBackButton}
               onClick={() => setShowMobileResults(false)}
             >
-              ← Back to Edit
+              {t("home.back")}
             </button>
           </div>
 
-          <h2 className={styles.sectionTitle}>Generated Results</h2>
+          <h2 className={styles.sectionTitle}>{t("home.results.title")}</h2>
           
           {isGenerating && (
             <div style={{ 
@@ -290,7 +294,7 @@ export default function Home() {
                 }} />
               </div>
               <p style={{ color: '#a1a1aa', fontSize: '1rem', textAlign: 'center' }}>
-                Creating your masterpiece... {Math.round(progress)}%
+                {t("home.results.generating")} {Math.round(progress)}%
               </p>
             </div>
           )}
@@ -312,7 +316,7 @@ export default function Home() {
                 borderRadius: '1rem',
                 margin: '1rem 0'
               }}>
-                <p>Generated images will appear here</p>
+                <p>{t("home.results.empty")}</p>
               </div>
             )
           )}

@@ -17,7 +17,10 @@ interface UserProfile {
   subscription_status: string | null;
 }
 
+import { useLocale } from "@/contexts/LocaleContext";
+
 export default function ProfilePage() {
+  const { t } = useLocale();
   const { data: session, status } = useSession();
   const router = useRouter();
   const [history, setHistory] = useState<GeneratedItem[]>([]);
@@ -152,7 +155,7 @@ export default function ProfilePage() {
   };
 
   if (status === "loading" || isCreditsLoading) {
-    return <div className={styles.loading}>Loading...</div>;
+    return <div className={styles.loading}>{t("profile.loading")}</div>;
   }
 
   if (!session) {
@@ -201,20 +204,20 @@ export default function ProfilePage() {
           <div className={styles.modalContent}>
             {deleteStatus === 'idle' && (
               <>
-                <h3>Delete Images?</h3>
-                <p>Are you sure you want to delete all images in this generation? This action cannot be undone.</p>
+                <h3>{t("profile.delete.title")}</h3>
+                <p>{t("profile.delete.message")}</p>
                 <div className={styles.modalActions}>
                   <button 
                     className={styles.cancelButton} 
                     onClick={() => setDeleteConfirmation(null)}
                   >
-                    Cancel
+                    {t("profile.delete.cancel")}
                   </button>
                   <button 
                     className={styles.deleteConfirmButton} 
                     onClick={confirmDelete}
                   >
-                    Delete
+                    {t("profile.delete.confirm")}
                   </button>
                 </div>
               </>
@@ -231,14 +234,14 @@ export default function ProfilePage() {
                   animation: 'spin 1s linear infinite',
                   margin: '0 auto 16px'
                 }} />
-                <p>Deleting image...</p>
+                <p>{t("profile.delete.deleting")}</p>
               </div>
             )}
 
             {deleteStatus === 'success' && (
               <div style={{ padding: '20px', textAlign: 'center', color: '#10b981' }}>
                 <div style={{ fontSize: '32px', marginBottom: '8px' }}>✓</div>
-                <p style={{ fontWeight: 600 }}>Deleted!</p>
+                <p style={{ fontWeight: 600 }}>{t("profile.delete.deleted")}</p>
               </div>
             )}
           </div>
@@ -302,9 +305,9 @@ export default function ProfilePage() {
 
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <h1 className={styles.title}>My Profile</h1>
+          <h1 className={styles.title}>{t("profile.title")}</h1>
           <button onClick={() => router.push("/")} className={styles.backButton}>
-            ← Back to Generator
+            {t("profile.back")}
           </button>
         </div>
         
@@ -325,34 +328,34 @@ export default function ProfilePage() {
 
           <div className={styles.planInfo}>
             <div className={styles.stat}>
-              <span className={styles.statLabel}>Plan</span>
+              <span className={styles.statLabel}>{t("profile.plan")}</span>
               <span className={styles.statValue}>
                 {profile?.subscription_tier ? profile.subscription_tier.toUpperCase() : "FREE"}
               </span>
             </div>
             <div className={styles.stat}>
-              <span className={styles.statLabel}>Credits</span>
+              <span className={styles.statLabel}>{t("profile.credits")}</span>
               <span className={styles.statValue}>⚡ {profile?.credits ?? 0}</span>
             </div>
             <button 
               className={styles.manageButton}
               onClick={() => router.push('/manage-plan')}
             >
-              Manage Plan / Buy Credits
+              {t("profile.manage")}
             </button>
           </div>
         </div>
       </header>
 
       <div className={styles.content}>
-        <h2 className={styles.sectionTitle}>History</h2>
+        <h2 className={styles.sectionTitle}>{t("profile.history")}</h2>
         {isHistoryLoading ? (
-          <div className={styles.loading}>Loading history...</div>
+          <div className={styles.loading}>{t("profile.loading")}</div>
         ) : history.length === 0 ? (
           <div className={styles.emptyState}>
-            <p>No generated images yet.</p>
+            <p>{t("profile.noImages")}</p>
             <button onClick={() => router.push("/")} className={styles.createButton}>
-              Create your first photo
+              {t("profile.createFirst")}
             </button>
           </div>
         ) : (

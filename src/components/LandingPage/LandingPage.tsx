@@ -1,54 +1,53 @@
-"use client";
-
 import React from "react";
 import { signIn } from "next-auth/react";
 import styles from "./LandingPage.module.css";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export default function LandingPage() {
+  const { t } = useLocale();
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <div className={styles.logo}>NanoProfile</div>
+        <div className={styles.logo}>{t("home.title")}</div>
         <button onClick={() => signIn("google")} className={styles.signInButton}>
-          Sign In
+          {t("lp.signin")}
         </button>
       </header>
 
       <main className={styles.main}>
         <div className={styles.hero}>
           <h1 className={styles.title}>
-            Create Your Perfect <br />
-            <span className={styles.gradientText}>AI Profile Photos</span>
-            <br /> in Seconds
+            {t("lp.hero.title")} <br />
+            <span className={styles.gradientText}>{t("lp.hero.title.highlight")}</span>
+            <br /> {t("lp.hero.title.suffix")}
           </h1>
           <p className={styles.subtitle}>
-            Transform your selfies into professional-quality photos for LinkedIn, Social Media, and Dating apps. 
-            No photographer needed.
+            {t("lp.hero.subtitle")}
           </p>
           
           <div className={styles.ctaGroup}>
             <button onClick={() => signIn("google")} className={styles.primaryButton}>
-              Get Started Free
+              {t("lp.cta.start")}
             </button>
-            <p className={styles.note}>Powered by Google Gemini 2.5</p>
+            <p className={styles.note}>{t("footer.powered")}</p>
           </div>
         </div>
 
         <div className={styles.features}>
           <div className={styles.featureCard}>
             <div className={styles.icon}>📸</div>
-            <h3>Upload Selfies</h3>
-            <p>Just upload a few casual photos of yourself.</p>
+            <h3>{t("lp.features.upload.title")}</h3>
+            <p>{t("lp.features.upload.desc")}</p>
           </div>
           <div className={styles.featureCard}>
             <div className={styles.icon}>✨</div>
-            <h3>AI Magic</h3>
-            <p>Our AI generates photorealistic scenes and styles.</p>
+            <h3>{t("lp.features.ai.title")}</h3>
+            <p>{t("lp.features.ai.desc")}</p>
           </div>
           <div className={styles.featureCard}>
             <div className={styles.icon}>🚀</div>
-            <h3>Stand Out Everywhere</h3>
-            <p>Boost your presence on LinkedIn, Instagram, and more.</p>
+            <h3>{t("lp.features.standout.title")}</h3>
+            <p>{t("lp.features.standout.desc")}</p>
           </div>
         </div>
       </main>
