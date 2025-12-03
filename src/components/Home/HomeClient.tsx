@@ -167,7 +167,16 @@ export default function HomeClient() {
     setGeneratedImages([]);
     setProgress(0);
 
-    let progressInterval: NodeJS.Timeout | null = null;
+    // Simulate progress
+    const duration = 15000; // Estimated 15 seconds
+    const step = 100;
+    const increment = (step / duration) * 100;
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return prev; // Cap at 90% until complete
+        return prev + increment;
+      });
+    }, step);
 
     const handleHeicError = () => {
       setGenerationError(
@@ -177,9 +186,8 @@ export default function HomeClient() {
     };
 
     try {
-      // Step 1: Convert HEIC files to JPEG if needed (0-20%)
+      // Step 1: Convert HEIC files to JPEG if needed
       setIsConvertingHeic(true);
-      setProgress(5);
 
       const heicFiles = selectedImages.filter(isHeicFile);
 
@@ -194,15 +202,10 @@ export default function HomeClient() {
       }
 
       const convertedImages = await Promise.all(
-        selectedImages.map(async (file, index) => {
+        selectedImages.map(async (file) => {
           if (isHeicFile(file)) {
             try {
-              const converted = await convertHeicToJpeg(file);
-              // Update progress for each converted file
-              const progressValue =
-                5 + ((index + 1) / selectedImages.length) * 15;
-              setProgress(progressValue);
-              return converted;
+              return await convertHeicToJpeg(file);
             } catch (error: any) {
               console.error(`Failed to convert HEIC file ${file.name}:`, error);
               // Re-throw the error with context preserved
@@ -214,18 +217,14 @@ export default function HomeClient() {
               );
             }
           }
-          // Update progress for non-HEIC files too
-          const progressValue = 5 + ((index + 1) / selectedImages.length) * 15;
-          setProgress(progressValue);
           return file;
         })
       );
       setIsConvertingHeic(false);
-      setProgress(20);
 
-      // Step 2: Convert images to base64 with mimeType (20-40%)
+      // Step 2: Convert images to base64 with mimeType
       const processedImages = await Promise.all(
-        convertedImages.map(async (file, index) => {
+        convertedImages.map(async (file) => {
           return new Promise<{ data: string; mimeType: string }>(
             (resolve, reject) => {
               const reader = new FileReader();
@@ -262,11 +261,6 @@ export default function HomeClient() {
                     return;
                   }
 
-                  // Update progress
-                  const progressValue =
-                    20 + ((index + 1) / convertedImages.length) * 20;
-                  setProgress(progressValue);
-
                   resolve({
                     data: base64,
                     mimeType: file.type || "image/jpeg", // Default to jpeg if missing
@@ -285,18 +279,6 @@ export default function HomeClient() {
           );
         })
       );
-      setProgress(40);
-
-      // Step 3: Send to API and wait for response (40-95%)
-      setProgress(45);
-
-      // Simulate progress during API call (40-95%)
-      progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 95) return prev;
-          return prev + 0.5; // Slow increment during API call
-        });
-      }, 200);
 
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -345,9 +327,6 @@ export default function HomeClient() {
         );
       }
 
-      // Step 4: Process response (95-100%)
-      setProgress(95);
-
       if (data.images && Array.isArray(data.images)) {
         setGeneratedImages(data.images);
         setProgress(100);
@@ -364,13 +343,6 @@ export default function HomeClient() {
     } catch (error: any) {
       console.error("Generation failed", error);
       setIsConvertingHeic(false);
-
-      // Clear progress interval if still running
-      if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-      }
-
       if (
         typeof error.message === "string" &&
         error.message
@@ -394,9 +366,7 @@ export default function HomeClient() {
       }
     } finally {
       setIsGenerating(false);
-      if (progressInterval) {
-        clearInterval(progressInterval);
-      }
+      clearInterval(interval);
     }
   };
 
