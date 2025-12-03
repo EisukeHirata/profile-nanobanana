@@ -62,11 +62,48 @@ export default function HomeClient() {
     );
   };
 
+  // Check if browser supports HEIC conversion
+  const isHeicConversionSupported = (): boolean => {
+    if (typeof window === "undefined") return false;
+
+    // Check for iOS/Safari (heic2any may not work well on iOS Chrome)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isChrome =
+      /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+
+    // iOS Chrome uses Safari WebView, which may have issues
+    if (isIOS && isChrome) {
+      console.warn(
+        "iOS Chrome detected - HEIC conversion may not work properly"
+      );
+    }
+
+    // Check for WebAssembly support (required by heic2any)
+    if (typeof WebAssembly === "undefined") {
+      return false;
+    }
+
+    return true;
+  };
+
   // Convert HEIC file to JPEG
   const convertHeicToJpeg = async (file: File): Promise<File> => {
+    // Check browser support first
+    if (!isHeicConversionSupported()) {
+      throw new Error(
+        "お使いのブラウザではHEIC画像の変換がサポートされていません。JPEGまたはPNG形式の画像をご使用ください。"
+      );
+    }
+
     try {
       // Dynamically import heic2any only on client side
-      const heic2any = (await import("heic2any")).default;
+      const heic2anyModule = await import("heic2any");
+      const heic2any = heic2anyModule.default || heic2anyModule;
+
+      if (!heic2any || typeof heic2any !== "function") {
+        throw new Error("HEIC変換ライブラリの読み込みに失敗しました");
+      }
 
       const result = await heic2any({
         blob: file,
@@ -81,6 +118,11 @@ export default function HomeClient() {
         throw new Error("変換結果が不正です");
       }
 
+      // Validate converted blob
+      if (convertedBlob.size === 0) {
+        throw new Error("変換後の画像サイズが0です");
+      }
+
       // Convert Blob to File
       return new File(
         [convertedBlob],
@@ -90,10 +132,30 @@ export default function HomeClient() {
           lastModified: file.lastModified,
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("HEIC conversion failed:", error);
+
+      // Provide more specific error messages
+      if (
+        error?.message?.includes("WebAssembly") ||
+        error?.message?.includes("wasm")
+      ) {
+        throw new Error(
+          "HEIC変換に必要な機能がサポートされていません。JPEGまたはPNG形式の画像をご使用ください。"
+        );
+      }
+
+      if (
+        error?.message?.includes("timeout") ||
+        error?.message?.includes("time")
+      ) {
+        throw new Error(
+          "HEIC画像の変換に時間がかかりすぎました。ファイルサイズが大きい可能性があります。JPEGまたはPNG形式の画像をご使用ください。"
+        );
+      }
+
       throw new Error(
-        "HEIC画像の変換に失敗しました。別の形式でお試しください。"
+        `HEIC画像「${file.name}」の変換に失敗しました。iOSのChrome/SafariではHEIC変換が正しく動作しない場合があります。JPEGまたはPNG形式の画像をご使用ください。`
       );
     }
   };
@@ -105,16 +167,7 @@ export default function HomeClient() {
     setGeneratedImages([]);
     setProgress(0);
 
-    // Simulate progress
-    const duration = 15000; // Estimated 15 seconds
-    const step = 100;
-    const increment = (step / duration) * 100;
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) return prev; // Cap at 90% until complete
-        return prev + increment;
-      });
-    }, step);
+    let progressInterval: NodeJS.Timeout | null = null;
 
     const handleHeicError = () => {
       setGenerationError(
@@ -124,39 +177,126 @@ export default function HomeClient() {
     };
 
     try {
-      // Step 1: Convert HEIC files to JPEG if needed
+      // Step 1: Convert HEIC files to JPEG if needed (0-20%)
       setIsConvertingHeic(true);
+      setProgress(5);
+
+      const heicFiles = selectedImages.filter(isHeicFile);
+
+      // Check if HEIC conversion is supported before attempting
+      if (heicFiles.length > 0 && !isHeicConversionSupported()) {
+        setIsConvertingHeic(false);
+        setGenerationError(
+          "お使いのブラウザではHEIC画像の変換がサポートされていません。JPEGまたはPNG形式の画像をご使用ください。クレジットは消費されていません。"
+        );
+        setProgress(0);
+        return;
+      }
+
       const convertedImages = await Promise.all(
-        selectedImages.map(async (file) => {
+        selectedImages.map(async (file, index) => {
           if (isHeicFile(file)) {
-            return await convertHeicToJpeg(file);
+            try {
+              const converted = await convertHeicToJpeg(file);
+              // Update progress for each converted file
+              const progressValue =
+                5 + ((index + 1) / selectedImages.length) * 15;
+              setProgress(progressValue);
+              return converted;
+            } catch (error: any) {
+              console.error(`Failed to convert HEIC file ${file.name}:`, error);
+              // Re-throw the error with context preserved
+              if (error instanceof Error) {
+                throw error;
+              }
+              throw new Error(
+                `HEIC画像「${file.name}」の変換に失敗しました。別の形式でお試しください。`
+              );
+            }
           }
+          // Update progress for non-HEIC files too
+          const progressValue = 5 + ((index + 1) / selectedImages.length) * 15;
+          setProgress(progressValue);
           return file;
         })
       );
       setIsConvertingHeic(false);
+      setProgress(20);
 
-      // Step 2: Convert images to base64 with mimeType
+      // Step 2: Convert images to base64 with mimeType (20-40%)
       const processedImages = await Promise.all(
-        convertedImages.map(async (file) => {
+        convertedImages.map(async (file, index) => {
           return new Promise<{ data: string; mimeType: string }>(
             (resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => {
-                const result = reader.result as string;
-                // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
-                const base64 = result.split(",")[1];
-                resolve({
-                  data: base64,
-                  mimeType: file.type || "image/jpeg", // Default to jpeg if missing
-                });
+                try {
+                  const result = reader.result as string;
+                  if (!result || !result.includes(",")) {
+                    reject(
+                      new Error(
+                        `画像「${file.name}」の読み込みに失敗しました。`
+                      )
+                    );
+                    return;
+                  }
+                  // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
+                  const base64 = result.split(",")[1];
+                  if (!base64 || base64.length === 0) {
+                    reject(
+                      new Error(
+                        `画像「${file.name}」のbase64変換に失敗しました。`
+                      )
+                    );
+                    return;
+                  }
+
+                  // Validate base64 string
+                  const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+                  if (!base64Regex.test(base64)) {
+                    reject(
+                      new Error(
+                        `画像「${file.name}」のbase64データが不正です。`
+                      )
+                    );
+                    return;
+                  }
+
+                  // Update progress
+                  const progressValue =
+                    20 + ((index + 1) / convertedImages.length) * 20;
+                  setProgress(progressValue);
+
+                  resolve({
+                    data: base64,
+                    mimeType: file.type || "image/jpeg", // Default to jpeg if missing
+                  });
+                } catch (error) {
+                  reject(error);
+                }
               };
-              reader.onerror = reject;
+              reader.onerror = (error) => {
+                reject(
+                  new Error(`画像「${file.name}」の読み込みエラー: ${error}`)
+                );
+              };
               reader.readAsDataURL(file);
             }
           );
         })
       );
+      setProgress(40);
+
+      // Step 3: Send to API and wait for response (40-95%)
+      setProgress(45);
+
+      // Simulate progress during API call (40-95%)
+      progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 95) return prev;
+          return prev + 0.5; // Slow increment during API call
+        });
+      }, 200);
 
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -174,6 +314,12 @@ export default function HomeClient() {
           imageCount,
         }),
       });
+
+      // Clear progress interval
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
 
       const data = await response.json();
 
@@ -199,6 +345,9 @@ export default function HomeClient() {
         );
       }
 
+      // Step 4: Process response (95-100%)
+      setProgress(95);
+
       if (data.images && Array.isArray(data.images)) {
         setGeneratedImages(data.images);
         setProgress(100);
@@ -215,6 +364,13 @@ export default function HomeClient() {
     } catch (error: any) {
       console.error("Generation failed", error);
       setIsConvertingHeic(false);
+
+      // Clear progress interval if still running
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+
       if (
         typeof error.message === "string" &&
         error.message
@@ -224,19 +380,23 @@ export default function HomeClient() {
         handleHeicError();
       } else if (
         typeof error.message === "string" &&
-        error.message.includes("HEIC画像の変換に失敗")
+        (error.message.includes("HEIC画像の変換に失敗") ||
+          (error.message.includes("画像") && error.message.includes("失敗")))
       ) {
         setGenerationError(error.message + " クレジットは消費されていません。");
         setProgress(0);
       } else {
-        alert(
+        setGenerationError(
           error.message ||
-            "Failed to generate images. Please check your API key and quotas."
+            "画像の生成に失敗しました。クレジットは消費されていません。もう一度お試しください。"
         );
+        setProgress(0);
       }
     } finally {
       setIsGenerating(false);
-      clearInterval(interval);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
     }
   };
 
