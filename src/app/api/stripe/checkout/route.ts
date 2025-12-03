@@ -15,12 +15,15 @@ export async function POST(request: Request) {
     const { priceId, mode, currency } = await request.json();
 
     if (!priceId || !mode) {
-      return NextResponse.json({ error: "Missing priceId or mode" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing priceId or mode" },
+        { status: 400 }
+      );
     }
 
     // Get or create Stripe Customer ID
     let customerId: string | undefined;
-    
+
     // Check if user already has a stripe_customer_id in profiles
     const { data: profile } = await supabaseAdmin
       .from("profiles")
@@ -41,28 +44,41 @@ export async function POST(request: Request) {
       });
       customerId = customer.id;
 
+      // Check if profile exists, if not create with 1 credit for new users
+      const { data: existingProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("credits")
+        .eq("email", session.user.email)
+        .single();
+
       // Update profile with new customer ID
-      // We use upsert here to ensure the profile exists
-      await supabaseAdmin.from("profiles").upsert({
-        email: session.user.email,
-        stripe_customer_id: customerId,
-      }, { onConflict: "email" });
+      // If profile doesn't exist, create it with 1 credit for new users
+      await supabaseAdmin.from("profiles").upsert(
+        {
+          email: session.user.email,
+          stripe_customer_id: customerId,
+          credits: existingProfile?.credits ?? 1, // Give 1 credit if new user
+          subscription_tier: existingProfile ? undefined : "free",
+        },
+        { onConflict: "email" }
+      );
     }
 
     // Determine the base URL for redirects
     // Determine the base URL for redirects
     // Priority: NEXT_PUBLIC_APP_URL (manual override) -> NEXTAUTH_URL (standard) -> Origin Header (dynamic) -> VERCEL_URL (Vercel preview) -> localhost
     const getBaseUrl = () => {
-      if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+      if (process.env.NEXT_PUBLIC_APP_URL)
+        return process.env.NEXT_PUBLIC_APP_URL;
       if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
-      
+
       const origin = request.headers.get("origin");
       if (origin) return origin;
-      
+
       if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
       return "http://localhost:3000";
     };
-    
+
     const baseUrl = getBaseUrl();
 
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -77,16 +93,22 @@ export async function POST(request: Request) {
       ],
       success_url: `${baseUrl}/profile?success=true`,
       cancel_url: `${baseUrl}/?canceled=true`,
-      locale: currency === 'JPY' ? 'ja' : 'auto',
+      locale: currency === "JPY" ? "ja" : "auto",
       metadata: {
         userId: session.user.email,
         priceId: priceId,
       },
     });
 
-    return NextResponse.json({ sessionId: checkoutSession.id, url: checkoutSession.url });
+    return NextResponse.json({
+      sessionId: checkoutSession.id,
+      url: checkoutSession.url,
+    });
   } catch (error: any) {
     console.error("Stripe Checkout Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

@@ -171,7 +171,7 @@ export default function HomeClient() {
     const duration = 15000; // Estimated 15 seconds
     const step = 100;
     const increment = (step / duration) * 100;
-    const interval = setInterval(() => {
+    let progressInterval: NodeJS.Timeout | null = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 90) return prev; // Cap at 90% until complete
         return prev + increment;
@@ -183,6 +183,10 @@ export default function HomeClient() {
         "画像が生成されませんでした。対応していない画像形式の可能性があります。クレジットは消費されていません。HEIC画像はJPEG/PNGに変換してから再試行してください。"
       );
       setProgress(0);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
     };
 
     try {
@@ -366,7 +370,10 @@ export default function HomeClient() {
       }
     } finally {
       setIsGenerating(false);
-      clearInterval(interval);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
     }
   };
 
